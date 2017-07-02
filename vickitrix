@@ -140,7 +140,7 @@ if __name__ == '__main__':
         )
     args = parser.parse_args()
     key_dir = os.path.join(os.path.expanduser('~'), '.vickitrix')
-    if args.subparser_name == 'config':
+    if args.subparser_name == 'configure':
         try:
             os.makedirs(key_dir)
         except OSError as e:
@@ -185,7 +185,7 @@ if __name__ == '__main__':
             for line in previous_lines_to_write:
                 print >>config_stream, line
             print >>config_stream, ''.join(['[', profile_name, ']'])
-            print >>config_stream, salt
+            print >>config_stream, ''.join(['Salt: ', base64.b64encode(salt)])
             for token in ['GDAX key', 'GDAX secret', 'GDAX passphrase',
                             'Twitter consumer key', 'Twitter consumer secret',
                             'Twitter access token key',
@@ -195,7 +195,7 @@ if __name__ == '__main__':
                     '''Write it in plaintext if it's a public key; then the 
                     user can open the config file and know which keys are in 
                     use.'''
-                    print >>config_stream, ''.join([token, ':', raw_input()])
+                    print >>config_stream, ''.join([token, ': ', raw_input()])
                 else:
                     # A warning to developers in a variable name
                     unencoded_and_not_to_be_written_to_disk = getpass.getpass(
@@ -203,16 +203,15 @@ if __name__ == '__main__':
                                     )
                     iv = Random.new().read(AES.block_size)
                     cipher = AES.new(key, AES.MODE_CFB, iv)
-                    print type(cipher.encrypt(
-                                unencoded_and_not_to_be_written_to_disk
-                        ))
-                    quit()
                     print >>config_stream, ''.join([
                             token,
                             ' (AES256-encrypted using profile password): ',
-                            iv, struct.pack(cipher.encrypt(
+                            base64.b64encode(iv + cipher.encrypt(
                                 unencoded_and_not_to_be_written_to_disk
                         ))])
+        print ('Configured profile "{}". '
+               'Now use the "trade" subcommand to '
+               'trigger trades with new tweets.').format(profile_name)
     elif args.subparser_name == 'trade':
         # Use _last_ entry in config file with profile name
         key = None
@@ -222,7 +221,9 @@ if __name__ == '__main__':
                 while line:
                     profile_name = line[1:-1]
                     if profile_name == args.profile:
-                        salt = config_stream.readline().rstrip('\n')
+                        salt = base64.b64decode(
+                                config_stream.readline().rstrip('\n')
+                            )
                         if key is None:
                             key = KDF.PBKDF2(getpass.getpass(
                                     'Enter password for profile "{}": '.format(
@@ -233,14 +234,21 @@ if __name__ == '__main__':
                             )
                         keys_and_secrets = []
                         for _ in xrange(7):
-                            encoded = config_stream.readline().rstrip(
-                                    '\n').decode('UTF-8')
+                            item, _, encoded = config_stream.readline().rstrip(
+                                                    '\n').partition(': ')
+                            if 'key' in item:
+                                # Not actually encoded; remove leading space
+                                keys_and_secrets.append(encoded)
+                                continue
+                            encoded = base64.b64decode(encoded)
                             cipher = AES.new(
                                     key, AES.MODE_CFB,
                                     encoded[:AES.block_size]
                                 )
                             keys_and_secrets.append(
-                                    cipher.decrypt(encoded)[AES.block_size:]
+                                    cipher.decrypt(
+                                            encoded
+                                        )[AES.block_size:]
                                 )
                     else:
                         # Skip profile
@@ -252,7 +260,6 @@ if __name__ == '__main__':
                     '"python vickitrix.py config" to configure vickitrix '
                     'before trading.'
                 )
-        print keys_and_secrets
         # Instantiate GDAX and Twitter clients
         gdax_client = gdax.AuthenticatedClient(
                                 *keys_and_secrets[:3]
