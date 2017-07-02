@@ -44,7 +44,6 @@ import getpass
 import datetime
 import sys
 import base64
-import struct
 
 def help_formatter(prog):
     """ So formatter_class's max_help_position can be changed. """
@@ -86,6 +85,11 @@ def print_to_screen(message, newline=True, carriage_return=False):
                     )
         sys.stderr.flush()
 
+def timestamp():
+    """ Returns timestamp string. """
+    return time.strftime('%A, %b %d, %Y at %I:%M:%S %p %Z || ',
+                         time.localtime(time.time()))
+
 def get_dough(gdax_client, status_update=False):
     """ Retrieve dough in user accounts
 
@@ -98,11 +102,63 @@ def get_dough(gdax_client, status_update=False):
     for account in gdax_client.get_accounts():
         dough[account['currency']] = account['available']
     if status_update:
-        '{:%Y-%m-%d %H:%M:%S}:'.format()
+        print_to_screen(''.join([timestamp(), 'Available to trade: ',
+                        ', '.join(map(' '.join,
+                                        [el[::-1] for el in dough.items()]))]))
     return dough
 
+class TradeListener(tweepy.StreamListener):
+    """ Trades on GDAX based on tweets. """
+
+    def __init__(self, rules, gdax_client, api=None):
+        super(TradeListener, self).__init__(api=api)
+        self.rules = rules
+        self.gdax_client = gdax_client
+
+    def on_status(self, status):
+        for rule in self.rules:
+            if status.author.screen_name == rule['handle'] and eval(
+                        condition.format(tweet=status.text)
+                    ):
+                # Condition satisfied! Perform action
+                accounts = get_dough(gdax_client, status_update=True)
+                base_currency, quote_currency = rule['product'].split('-')
+                keywords = { 'type' : 'market',
+                             'product_id' : rule['product'] }
+                if 'size' in rule:
+                    keywords['size'] = str(eval(
+                            rule['size'].format(
+                                    available=accounts[base_currency]
+                                )
+                        ))
+                if 'funds' in rule:
+                    keywords['funds'] = str(eval(
+                            rule['funds'].format(
+                                    available=accounts[quote_currency]
+                                )
+                        ))
+                print_to_screen('****')
+                print_to_screen(timestamp() + 'TRADING')
+                for keyword in keywords:
+                    print_to_screen(' : '.join(keyword, keywords[keyword]))
+                print_to_screen('****')
+                if rule['action'] == 'buy':
+                    self.gdax_client.buy(**keywords)
+                elif rule['action'] == 'sell':
+                    self.gdax_client.sell(**keywords)
+                else:
+                    raise RuntimeError(
+                            ('A rule has action "{}", when the only '
+                             'valid options are "buy" and "sell".').format(
+                                                                rule['action']
+                                                            )
+                        )
+                print_to_screen(timestamp() + 'Trade complete.')
+                time.sleep(10)
+                get_dough(gdax_client, status_update=True)
+
 if __name__ == '__main__':
-    if not (sys.version_info >= (2,7) and sys.version_info[0] == 2):
+    if not (sys.version_info >= (2, 7) and sys.version_info[0] == 2):
         raise RuntimeError('vickitrix should be run using Python 2.7.x.')
     # Print file's docstring if -h is invoked
     parser = argparse.ArgumentParser(description=_help_intro, 
@@ -222,7 +278,8 @@ if __name__ == '__main__':
                     profile_name = line[1:-1]
                     if profile_name == args.profile:
                         salt = base64.b64decode(
-                                config_stream.readline().rstrip('\n')
+                                config_stream.readline().rstrip(
+                                        '\n').partition(': ')[2]
                             )
                         if key is None:
                             key = KDF.PBKDF2(getpass.getpass(
@@ -257,114 +314,47 @@ if __name__ == '__main__':
         except IOError:
             raise IOError(
                     'Cannot find vickitrix config file. Use '
-                    '"python vickitrix.py config" to configure vickitrix '
+                    '"vickitrix configure" to configure vickitrix '
                     'before trading.'
                 )
-        # Instantiate GDAX and Twitter clients
-        gdax_client = gdax.AuthenticatedClient(
-                                *keys_and_secrets[:3]
-                            )
-        twitter_client = twitter.Api(
-                    consumer_key=keys_and_secrets[3],
-                    consumer_secret=keys_and_secrets[4],
-                    access_token_key=keys_and_secrets[5],
-                    access_token_secret=keys_and_secrets[6]
-                )
-        # Are they working?
-        gdax_client.get_accounts()
-        quit()
+        try:
+            # Instantiate GDAX and Twitter clients
+            gdax_client = gdax.AuthenticatedClient(
+                                    *keys_and_secrets[:3]
+                                )
+            # Are they working?
+            get_dough(gdax_client, status_update=True)
+            auth = tweepy.OAuthHandler(*keys_and_secrets[3:5])
+            auth.set_access_token(*keys_and_secrets[5:7])
+            twitter_client = tweepy.API(auth)
+        except Exception as e:
+            from traceback import format_exc
+            print_to_screen(format_exc())
+            print_to_screen(''.join(
+                    [os.linesep,
+                     'Chances are, this opaque error happened because either ',
+                      os.linesep,
+                      'a) You entered incorrect security credentials '
+                      'when you were configuring vickitrix.',
+                      os.linesep,
+                      'b) You entered the wrong password above.']
+                ))
         # Grab rules for trading
         from vickirules import rules
         # Get all handles to monitor
         handles = set([rule['handle'] for rule in rules])
-        last_status, next_handles = {}, copy.copy(handles)
+        users = []
         for handle in handles:
             try:
-                last_status[handle] = twitter_client.GetUserTimeline(
-                                                screen_name=handle
-                                            )[0]
-            except twitter.error.TwitterError as e:
-                print >>sys.stderr, (
-                        '{} doesn\'t appear to be a Twitter handle, '
-                        'so it will not be monitored.'
-                    )
-                next_handles.remove(handle)
-            except IndexError:
-                # No tweets yet; just create a dud status with an ID
-                last_status[handle] = Bunch()
-                last_status[handle].id = 'NA'
-        dough = get_dough(gdax_client)
-        print_to_screen(
-                ('You have ${} and {} '
-                 'ETH available to trade.').format(
-                        dough['USD'], dough['ETH']
-                    )
-            )
-        print_to_screen((
-                'Retrieved {:%Y-%m-%d %H:%M:%S}; @vickicryptobot: '
-            ).format(datetime.datetime.now()) + last_status.text)
-        while True:
-            time.sleep(args.period)
-            try:
-                next_status = twitter_client.GetUserTimeline(
-                                                screen_name='vickicryptobot'
-                                            )[0]
-            except IndexError:
-                raise RuntimeError(
-                        '@vickicryptobot doesn\'t appear to have any '
-                        'tweets on her timeline, which is strange....'
-                    )
-            if next_status.id != last_status.id:
-                last_status = next_status
-                print_to_screen((
-                    'Retrieved {:%Y-%m-%d %H:%M:%S}; @vickicryptobot: '
-                    ).format(datetime.datetime.now()) + last_status.text)
-                if 'ETHUSD' in last_status.text:
-                    # Hurrah! We should trade. Grab how much dough's available.
-                    dough = get_dough(gdax_client)
-                    if 'short' in last_status.text:
-                        # Sell ETH
-                        amount = float(int(float(
-                                dough['ETH']
-                            ) * args.sell_stack_pct)) / 100
-                        if amount == 0: continue
-                        print_to_screen('Selling {} ETH...'.format(amount))
-                        gdax_client.sell(
-                                type='market',
-                                product_id='ETH-USD',
-                                size=str(amount) # ETH
-                            )
-                        time.sleep(10)
-                        print_to_screen('Sold {} ETH.'.format(amount))
-                        dough = get_dough(gdax_client)
-                        print_to_screen(
-                                ('You have ${} and {} '
-                                 'ETH available to trade.').format(
-                                        dough['USD'], dough['ETH']
-                                    )
-                            )
-                    elif 'long' in last_status.text:
-                        # Buy ETH
-                        amount = float(int(float(
-                                dough['USD']
-                            ) * args.buy_stack_pct)) / 100
-                        if amount == 0: continue
-                        print_to_screen('Buying ${} worth of ETH...'.format(
-                                                                        amount
-                                                                    ))
-                        gdax_client.buy(
-                                type='market',
-                                product_id='ETH-USD',
-                                funds=str(amount)
-                            )
-                        time.sleep(10)
-                        print_to_screen('Bought ${} worth of ETH.'.format(
-                                                                        amount
-                                                                    ))
-                        dough = get_dough(gdax_client)
-                        print_to_screen(
-                                ('You have ${} and {} '
-                                 'ETH available to trade.').format(
-                                        dough['USD'], dough['ETH']
-                                    )
-                            )
+                users.append(twitter_client.get_user(handle))
+            except tweepy.error.TweepError as e:
+                if 'User not found' in e:
+                    'Handle {} not found; skipping...'.format(handle)
+        if not users:
+            raise RuntimeError('No followable Twitter handles found in rules!')
+        trade_listener = TradeListener(rules, gdax_client)
+        stream = tweepy.Stream(
+                    auth=twitter_client.auth, listener=trade_listener
+                )
+        print_to_screen('Waiting for tweets...')
+        stream.filter(follow=[user.user_id for user in users])
