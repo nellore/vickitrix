@@ -116,9 +116,12 @@ class TradeListener(tweepy.StreamListener):
         self.gdax_client = gdax_client
 
     def on_status(self, status):
+        # NO RETWEETS
+        if status.text.startswith('RT'): return
+        print_to_screen(timestamp() + status.text)
         for rule in self.rules:
             if status.author.screen_name == rule['handle'] and eval(
-                        condition.format(tweet=status.text)
+                        rule['condition'].format(tweet='"' + status.text + '"')
                     ):
                 # Condition satisfied! Perform action
                 accounts = get_dough(gdax_client, status_update=True)
@@ -140,7 +143,7 @@ class TradeListener(tweepy.StreamListener):
                 print_to_screen('****')
                 print_to_screen(timestamp() + 'TRADING')
                 for keyword in keywords:
-                    print_to_screen(' : '.join(keyword, keywords[keyword]))
+                    print_to_screen(' : '.join([keyword, keywords[keyword]]))
                 print_to_screen('****')
                 if rule['action'] == 'buy':
                     self.gdax_client.buy(**keywords)
@@ -156,6 +159,11 @@ class TradeListener(tweepy.StreamListener):
                 print_to_screen(timestamp() + 'Trade complete.')
                 time.sleep(10)
                 get_dough(gdax_client, status_update=True)
+
+    def on_error(self, status_code):
+        if status_code == 420:
+            #returning False in on_data disconnects the stream
+            return False
 
 if __name__ == '__main__':
     if not (sys.version_info >= (2, 7) and sys.version_info[0] == 2):
@@ -193,6 +201,11 @@ if __name__ == '__main__':
             default=os.path.join(os.path.realpath(__file__), 'rules.py'),
             help=('rules file; this is Python that sets the variable "rules" '
                   'to a list of dictionaries')
+        )
+    trade_parser.add_argument('--interval', '-i', type=int, required=False,
+            default=905,
+            help=('how long to wait (in s) before reattempting to connect '
+                  'after getting rate-limited')
         )
     args = parser.parse_args()
     key_dir = os.path.join(os.path.expanduser('~'), '.vickitrix')
@@ -339,6 +352,7 @@ if __name__ == '__main__':
                       os.linesep,
                       'b) You entered the wrong password above.']
                 ))
+            exit(1)
         # Grab rules for trading
         from vickirules import rules
         # Get all handles to monitor
@@ -356,5 +370,13 @@ if __name__ == '__main__':
         stream = tweepy.Stream(
                     auth=twitter_client.auth, listener=trade_listener
                 )
-        print_to_screen('Waiting for tweets...')
-        stream.filter(follow=[user.user_id for user in users])
+        print_to_screen('Listening for tweets...')
+        while True:
+            stream.filter(follow=[user.id_str for user in users])
+            print_to_screen(
+                    timestamp()
+                    + 'Got rate-limited. Restarting in {} s...'.format(
+                                                                args.interval
+                                                            )
+                )
+            time.sleep(args.interval)

@@ -13,4 +13,11 @@ rules = [
         'size' : '{available}',
         'condition' : '"ETHUSD" in {tweet} and "short" in {tweet}'
     },
+    {
+        'handle' : 'Saltificator',
+        'action' : 'buy',
+        'product' : 'ETH-USD',
+        'funds' : '{available}',
+        'condition' : '"ETHUSD" in {tweet} and "long" in {tweet}'
+    }
 ]
