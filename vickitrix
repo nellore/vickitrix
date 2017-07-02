@@ -1,0 +1,363 @@
+#!/usr/bin/env python2
+"""
+vickitrix
+
+Periodically checks tweets using https://github.com/bear/python-twitter and
+uses rules specified in file to make market trades on GDAX using
+https://github.com/danpaquin/GDAX-Python. Default rules are stored in 
+vickirules.py and follow the tweets of @vickicryptobot.
+"""
+
+_help_intro = """vickitrix allows users to base GDAX trades on tweets."""
+_key_derivation_iterations = 5000
+
+try:
+    import gdax
+except ImportError:
+    raise ImportError(
+        'vickitrix requires GDAX-Python. Install it with "pip install gdax".'
+    )
+
+try:
+    import tweepy
+except ImportError:
+    raise ImportError(
+        'vickitrix requires tweepy. Install it with '
+        '"pip install tweepy".'
+    )
+
+try:
+    from Crypto.Cipher import AES
+    from Crypto.Protocol import KDF
+    from Crypto import Random
+except ImportError:
+    raise ImportError(
+        'vickitrix requires PyCrypto. Install it with '
+        '"pip install pycrypto".'
+    )
+
+import os
+import errno
+import time
+import argparse
+import getpass
+import datetime
+import sys
+import base64
+import struct
+
+def help_formatter(prog):
+    """ So formatter_class's max_help_position can be changed. """
+    return argparse.HelpFormatter(prog, max_help_position=40)
+
+def print_to_screen(message, newline=True, carriage_return=False):
+    """ Prints message to stdout as well as stderr if stderr is redirected.
+
+        message: message to print
+        newline: True iff newline should be printed
+        carriage_return: True iff carriage return should be printed; also
+            clears line with ANSI escape code
+
+        No return value.
+    """
+    full_message = ('\x1b[K' + message + ('\r' if carriage_return else '')
+                        + ('\n' if newline else ''))
+    try:
+        sys.stderr.write(full_message)
+        if sys.stderr.isatty():
+            sys.stderr.flush()
+        else:
+            try:
+                # So the user sees it too
+                sys.stdout.write(full_message)
+                sys.stdout.flush()
+            except UnicodeEncodeError:
+                sys.stdout.write(
+                                unicodedata.normalize(
+                                        'NFKD', full_message
+                                    ).encode('ascii', 'ignore')
+                            )
+                sys.stdout.flush()
+    except UnicodeEncodeError:
+        sys.stderr.write(
+                        unicodedata.normalize(
+                                'NFKD', full_message
+                            ).encode('ascii', 'ignore')
+                    )
+        sys.stderr.flush()
+
+def get_dough(gdax_client, status_update=False):
+    """ Retrieve dough in user accounts
+
+        gdax_client: instance of gdax.AuthenticatedClient
+        status_update: True iff status update should be printed
+
+        Return value: dictionary mapping currency to account information
+    """
+    dough = {}
+    for account in gdax_client.get_accounts():
+        dough[account['currency']] = account['available']
+    if status_update:
+        '{:%Y-%m-%d %H:%M:%S}:'.format()
+    return dough
+
+if __name__ == '__main__':
+    if not (sys.version_info >= (2,7) and sys.version_info[0] == 2):
+        raise RuntimeError('vickitrix should be run using Python 2.7.x.')
+    # Print file's docstring if -h is invoked
+    parser = argparse.ArgumentParser(description=_help_intro, 
+                formatter_class=help_formatter)
+    subparsers = parser.add_subparsers(help=(
+                'subcommands; add "-h" or "--help" '
+                'after a subcommand for its parameters'),
+                dest='subparser_name'
+            )
+    config_parser = subparsers.add_parser(
+                            'configure',
+                            help=(
+                                'creates profile for storing keys/secrets; '
+                                'all keys are stored in "{}".'.format(
+                                        os.path.join(
+                                            os.path.expanduser('~'),
+                                            '.vickitrix',
+                                            'config')
+                                    )
+                            )
+                        )
+    trade_parser = subparsers.add_parser(
+                            'trade',
+                            help='trades based on tweets'
+                        )
+    # Add command-line arguments
+    trade_parser.add_argument('--profile', '-p', type=str, required=False,
+            default='default',
+            help='which profile to use for trading'
+        )
+    trade_parser.add_argument('--rules', '-r', type=str, required=False,
+            default=os.path.join(os.path.realpath(__file__), 'rules.py'),
+            help=('rules file; this is Python that sets the variable "rules" '
+                  'to a list of dictionaries')
+        )
+    args = parser.parse_args()
+    key_dir = os.path.join(os.path.expanduser('~'), '.vickitrix')
+    if args.subparser_name == 'config':
+        try:
+            os.makedirs(key_dir)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
+        # Grab and write all necessary credentials
+        config_file = os.path.join(key_dir, 'config')
+        print 'Enter a name for a new profile (default): ',
+        profile_name = raw_input()
+        if not profile_name: profile_name = 'default'
+        salt = Random.new().read(AES.block_size)
+        key = KDF.PBKDF2(getpass.getpass((
+                'Enter a password for this profile. The password will be used '
+                'to generate a key so all GDAX/Twitter passcodes/secrets '
+                'written to {} are further encoded with AES256. '
+                'You will have to enter a profile\'s password every time you '
+                'run "vickitrix trade": '
+            ).format(config_file)), salt,
+                dkLen=32, count=_key_derivation_iterations)
+        previous_lines_to_write = []
+        if os.path.exists(config_file):
+            '''Have to check if the profile exists already. If it does, replace
+            it. Assume the config file is under vickitrix's control and thus 
+            has no errors; if the user chooses to mess it up, that's on
+            them.'''
+            with open(config_file, 'rU') as config_stream:
+                line = config_stream.readline().rstrip('\n')
+                while line:
+                    if line[0] == '[' and line[-1] == ']':
+                        if profile_name == line[1:-1]:
+                            # Skip this profile
+                            for _ in xrange(8): config_stream.readline()
+                            line = config_stream.readline().rstrip('\n')
+                            continue
+                        previous_lines_to_write.append(line)
+                        for _ in xrange(8):
+                            previous_lines_to_write.append(
+                                        config_stream.readline().rstrip('\n')
+                                    )
+                    line = config_stream.readline().rstrip('\n')
+        with open(config_file, 'wb') as config_stream:
+            for line in previous_lines_to_write:
+                print >>config_stream, line
+            print >>config_stream, ''.join(['[', profile_name, ']'])
+            print >>config_stream, salt
+            for token in ['GDAX key', 'GDAX secret', 'GDAX passphrase',
+                            'Twitter consumer key', 'Twitter consumer secret',
+                            'Twitter access token key',
+                            'Twitter access token secret']:
+                if 'key' in token:
+                    print ''.join(['Enter ', token, ':']),
+                    '''Write it in plaintext if it's a public key; then the 
+                    user can open the config file and know which keys are in 
+                    use.'''
+                    print >>config_stream, ''.join([token, ':', raw_input()])
+                else:
+                    # A warning to developers in a variable name
+                    unencoded_and_not_to_be_written_to_disk = getpass.getpass(
+                                        ''.join(['Enter ', token, ': '])
+                                    )
+                    iv = Random.new().read(AES.block_size)
+                    cipher = AES.new(key, AES.MODE_CFB, iv)
+                    print type(cipher.encrypt(
+                                unencoded_and_not_to_be_written_to_disk
+                        ))
+                    quit()
+                    print >>config_stream, ''.join([
+                            token,
+                            ' (AES256-encrypted using profile password): ',
+                            iv, struct.pack(cipher.encrypt(
+                                unencoded_and_not_to_be_written_to_disk
+                        ))])
+    elif args.subparser_name == 'trade':
+        # Use _last_ entry in config file with profile name
+        key = None
+        try:
+            with open(os.path.join(key_dir, 'config'), 'rU') as config_stream:
+                line = config_stream.readline().rstrip('\n')
+                while line:
+                    profile_name = line[1:-1]
+                    if profile_name == args.profile:
+                        salt = config_stream.readline().rstrip('\n')
+                        if key is None:
+                            key = KDF.PBKDF2(getpass.getpass(
+                                    'Enter password for profile "{}": '.format(
+                                                                profile_name
+                                                            )
+                                ), salt,
+                                dkLen=32, count=_key_derivation_iterations
+                            )
+                        keys_and_secrets = []
+                        for _ in xrange(7):
+                            encoded = config_stream.readline().rstrip(
+                                    '\n').decode('UTF-8')
+                            cipher = AES.new(
+                                    key, AES.MODE_CFB,
+                                    encoded[:AES.block_size]
+                                )
+                            keys_and_secrets.append(
+                                    cipher.decrypt(encoded)[AES.block_size:]
+                                )
+                    else:
+                        # Skip profile
+                        for _ in xrange(8): config_stream.readline()
+                    line = config_stream.readline().rstrip('\n')
+        except IOError:
+            raise IOError(
+                    'Cannot find vickitrix config file. Use '
+                    '"python vickitrix.py config" to configure vickitrix '
+                    'before trading.'
+                )
+        print keys_and_secrets
+        # Instantiate GDAX and Twitter clients
+        gdax_client = gdax.AuthenticatedClient(
+                                *keys_and_secrets[:3]
+                            )
+        twitter_client = twitter.Api(
+                    consumer_key=keys_and_secrets[3],
+                    consumer_secret=keys_and_secrets[4],
+                    access_token_key=keys_and_secrets[5],
+                    access_token_secret=keys_and_secrets[6]
+                )
+        # Are they working?
+        gdax_client.get_accounts()
+        quit()
+        # Grab rules for trading
+        from vickirules import rules
+        # Get all handles to monitor
+        handles = set([rule['handle'] for rule in rules])
+        last_status, next_handles = {}, copy.copy(handles)
+        for handle in handles:
+            try:
+                last_status[handle] = twitter_client.GetUserTimeline(
+                                                screen_name=handle
+                                            )[0]
+            except twitter.error.TwitterError as e:
+                print >>sys.stderr, (
+                        '{} doesn\'t appear to be a Twitter handle, '
+                        'so it will not be monitored.'
+                    )
+                next_handles.remove(handle)
+            except IndexError:
+                # No tweets yet; just create a dud status with an ID
+                last_status[handle] = Bunch()
+                last_status[handle].id = 'NA'
+        dough = get_dough(gdax_client)
+        print_to_screen(
+                ('You have ${} and {} '
+                 'ETH available to trade.').format(
+                        dough['USD'], dough['ETH']
+                    )
+            )
+        print_to_screen((
+                'Retrieved {:%Y-%m-%d %H:%M:%S}; @vickicryptobot: '
+            ).format(datetime.datetime.now()) + last_status.text)
+        while True:
+            time.sleep(args.period)
+            try:
+                next_status = twitter_client.GetUserTimeline(
+                                                screen_name='vickicryptobot'
+                                            )[0]
+            except IndexError:
+                raise RuntimeError(
+                        '@vickicryptobot doesn\'t appear to have any '
+                        'tweets on her timeline, which is strange....'
+                    )
+            if next_status.id != last_status.id:
+                last_status = next_status
+                print_to_screen((
+                    'Retrieved {:%Y-%m-%d %H:%M:%S}; @vickicryptobot: '
+                    ).format(datetime.datetime.now()) + last_status.text)
+                if 'ETHUSD' in last_status.text:
+                    # Hurrah! We should trade. Grab how much dough's available.
+                    dough = get_dough(gdax_client)
+                    if 'short' in last_status.text:
+                        # Sell ETH
+                        amount = float(int(float(
+                                dough['ETH']
+                            ) * args.sell_stack_pct)) / 100
+                        if amount == 0: continue
+                        print_to_screen('Selling {} ETH...'.format(amount))
+                        gdax_client.sell(
+                                type='market',
+                                product_id='ETH-USD',
+                                size=str(amount) # ETH
+                            )
+                        time.sleep(10)
+                        print_to_screen('Sold {} ETH.'.format(amount))
+                        dough = get_dough(gdax_client)
+                        print_to_screen(
+                                ('You have ${} and {} '
+                                 'ETH available to trade.').format(
+                                        dough['USD'], dough['ETH']
+                                    )
+                            )
+                    elif 'long' in last_status.text:
+                        # Buy ETH
+                        amount = float(int(float(
+                                dough['USD']
+                            ) * args.buy_stack_pct)) / 100
+                        if amount == 0: continue
+                        print_to_screen('Buying ${} worth of ETH...'.format(
+                                                                        amount
+                                                                    ))
+                        gdax_client.buy(
+                                type='market',
+                                product_id='ETH-USD',
+                                funds=str(amount)
+                            )
+                        time.sleep(10)
+                        print_to_screen('Bought ${} worth of ETH.'.format(
+                                                                        amount
+                                                                    ))
+                        dough = get_dough(gdax_client)
+                        print_to_screen(
+                                ('You have ${} and {} '
+                                 'ETH available to trade.').format(
+                                        dough['USD'], dough['ETH']
+                                    )
+                            )
