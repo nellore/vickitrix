@@ -36,6 +36,7 @@ import argparse
 from argparse import HelpFormatter
 import getpass
 import datetime
+import sys
 
 def help_formatter(prog):
     """ So formatter_class's max_help_position can be changed. """
@@ -91,6 +92,8 @@ def print_to_screen(message, newline=True, carriage_return=False):
 
 
 if __name__ == '__main__':
+    if not (sys.version_info >= (2,7) and sys.version_info[0] == 2):
+        raise RuntimeError('Vickitrix should be run using Python 2.7.x.')
     # Print file's docstring if -h is invoked
     parser = argparse.ArgumentParser(description=_help_intro, 
                 formatter_class=help_formatter)
@@ -218,7 +221,7 @@ if __name__ == '__main__':
                         print_to_screen('Selling {} ETH...'.format(amount))
                         gdax_client.sell(
                                 type='market',
-                                product_id='ETH-USD'
+                                product_id='ETH-USD',
                                 size=str(amount) # ETH
                             )
                         time.sleep(10)
@@ -241,7 +244,7 @@ if __name__ == '__main__':
                                                                     ))
                         gdax_client.buy(
                                 type='market',
-                                product_id='ETH-USD'
+                                product_id='ETH-USD',
                                 funds=str(amount)
                             )
                         time.sleep(10)
