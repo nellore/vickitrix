@@ -207,7 +207,7 @@ if __name__ == '__main__':
                     )
             )
         print_to_screen((
-                'Retrieved {:%Y-%m-%d %H:%M:%S}; @vickibot: '
+                'Retrieved {:%Y-%m-%d %H:%M:%S}; @vickicryptobot: '
             ).format(datetime.datetime.now()) + last_status.text)
         while True:
             time.sleep(args.period)
