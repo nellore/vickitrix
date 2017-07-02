@@ -33,14 +33,13 @@ import os
 import errno
 import time
 import argparse
-from argparse import HelpFormatter
 import getpass
 import datetime
 import sys
 
 def help_formatter(prog):
     """ So formatter_class's max_help_position can be changed. """
-    return HelpFormatter(prog, max_help_position=40)
+    return argparse.HelpFormatter(prog, max_help_position=40)
 
 def get_dough(gdax_client):
     """ Retrieve dough in user accounts
