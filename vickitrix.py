@@ -163,23 +163,30 @@ if __name__ == '__main__':
                                 )
     elif args.subparser_name == 'trade':
         # Use _last_ entry in config file with profile name
-        with open(os.path.join(key_dir, 'config')) as config_stream:
-            line = config_stream.readline()
-            while line:
-                stripped = line.strip()
-                if stripped.startswith('[') and stripped.endswith(']'):
-                    profile_name = stripped[1:-1]
-                if profile_name == args.profile:
-                    [gdax_key, gdax_secret, gdax_passphrase,
-                        consumer_key, consumer_secret,
-                        access_token_key, access_token_secret] = [
-                                config_stream.readline().strip()
-                                for _ in xrange(7)
-                            ]
-                else:
-                    for _ in xrange(6):
-                        config_stream.readline()
+        try:
+            with open(os.path.join(key_dir, 'config')) as config_stream:
                 line = config_stream.readline()
+                while line:
+                    stripped = line.strip()
+                    if stripped.startswith('[') and stripped.endswith(']'):
+                        profile_name = stripped[1:-1]
+                    if profile_name == args.profile:
+                        [gdax_key, gdax_secret, gdax_passphrase,
+                            consumer_key, consumer_secret,
+                            access_token_key, access_token_secret] = [
+                                    config_stream.readline().strip()
+                                    for _ in xrange(7)
+                                ]
+                    else:
+                        for _ in xrange(6):
+                            config_stream.readline()
+                    line = config_stream.readline()
+        except IOError:
+            raise IOError(
+                    'Cannot find vickitrix config file. Use '
+                    '"python vickitrix.py config" to configure vickitrix '
+                    'before trading.'
+                )
         # Instantiate GDAX and Twitter clients
         gdax_client = gdax.AuthenticatedClient(
                                 gdax_key, gdax_secret,
