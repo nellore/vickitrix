@@ -199,15 +199,18 @@ if __name__ == '__main__':
         except IndexError:
             raise RuntimeError('@vickicryptobot doesn\'t appear to have any '
                                'tweets on her timeline, which is strange....')
+        print_to_screen((
+                'Retrieved {:%Y-%m-%d %H:%M:%S}; @vickibot: '
+            ).format(datetime.datetime.now())) + last_status['text']
         while True:
             time.sleep(args.period)
             next_status = twitter_client.GetUserTimeline(
                                             screen_name='vickicryptobot'
                                         )[0]
             if next_status['id'] != last_status['id']:
-                print_to_screen(
-                        'Retrieved {:%Y-%m-%d %H:%M:%S}; @vickibot: '
-                    ).format(datetime.datetime.now()) + last_status['text']
+                print_to_screen((
+                    'Retrieved {:%Y-%m-%d %H:%M:%S}; @vickibot: '
+                    ).format(datetime.datetime.now())) + last_status['text']
                 last_status = next_status
                 if 'ETHUSD' in last_status['text']:
                     # Hurrah! We should trade. Grab how much dough's available.
