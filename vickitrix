@@ -299,9 +299,13 @@ if __name__ == '__main__':
                             base64.b64encode(iv + cipher.encrypt(
                                 unencoded_and_not_to_be_written_to_disk
                         ))])
-        print ('Configured profile "{}". '
+        print ('Configured profile "{}". Encrypted credentials have been '
+               'stored in {}. '
                'Now use the "trade" subcommand to '
-               'trigger trades with new tweets.').format(profile_name)
+               'trigger trades with new tweets.').format(
+                        profile_name,
+                        config_file
+                    )
     elif args.subparser_name == 'trade':
         # Use _last_ entry in config file with profile name
         key = None
