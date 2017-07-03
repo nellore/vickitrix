@@ -48,5 +48,5 @@ Pull requests are welcome! Fork at will! If you've written a substantial contrib
 
 If you use this software, you're making and/or losing money because someone or something you probably don't know tweeted, which is totally crazy. Don't take risks with money you can't afford to lose.
 
-This software is supplied "as is" without any warranties or support.
+This software is supplied "as is" without any warranties or support. I assume no liability or responsibility for use of the software.
 
