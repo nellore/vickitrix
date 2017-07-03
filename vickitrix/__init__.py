@@ -303,9 +303,23 @@ def go():
                                     )
                     line = config_stream.readline().rstrip('\n')
         with open(config_file, 'w') as config_stream:
-            for line in previous_lines_to_write:
-                print(line, file=config_stream)
             print(''.join(['[', profile_name, ']']), file=config_stream)
+        # Now change permissions
+        try:
+            os.chmod(config_file, 0600)
+        except OSError as e:
+            if e.errno == errno.EPERM:
+                print >>sys.stderr, (
+                        ('Warning: could not change permissions of '
+                         '"{}" so it\'s readable/writable by only the '
+                         'current user. If there are other users of this '
+                         'system, they may be able to read your credentials '
+                         'file.').format(
+                                config_file
+                            )
+                    )
+                raise
+        with open(config_file, 'a') as config_stream:
             print(''.join(['Salt: ', base64.b64encode(salt).decode()]),
                     file=config_stream)
             for token in ['GDAX key', 'GDAX secret', 'GDAX passphrase',
@@ -313,7 +327,7 @@ def go():
                             'Twitter access token',
                             'Twitter access token secret']:
                 if 'key' in token:
-                    print(''.join(['Enter ', token, ':']), end='')
+                    print(''.join(['Enter ', token, ': ']), end='')
                     '''Write it in plaintext if it's a public key; then the 
                     user can open the config file and know which keys are in 
                     use.'''
@@ -332,8 +346,10 @@ def go():
                             base64.b64encode(iv + cipher.encrypt(
                                 unencoded_and_not_to_be_written_to_disk
                             )).decode()]), file=config_stream)
+            for line in previous_lines_to_write:
+                print(line, file=config_stream)
         print(('Configured profile "{}". Encrypted credentials have been '
-               'stored in {}. '
+               'stored in "{}". '
                'Now use the "trade" subcommand to '
                'trigger trades with new tweets.').format(
                         profile_name,
