@@ -278,7 +278,7 @@ if __name__ == '__main__':
             print >>config_stream, ''.join(['Salt: ', base64.b64encode(salt)])
             for token in ['GDAX key', 'GDAX secret', 'GDAX passphrase',
                             'Twitter consumer key', 'Twitter consumer secret',
-                            'Twitter access token key',
+                            'Twitter access token',
                             'Twitter access token secret']:
                 if 'key' in token:
                     print ''.join(['Enter ', token, ':']),
