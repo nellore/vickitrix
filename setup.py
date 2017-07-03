@@ -9,7 +9,7 @@ setup(name='vickitrix',
       author_email='anellore@gmail.com',
       license='MIT',
       packages=['vickitrix'],
-      package_data={'vickitrix': ['*', './rules/*']},
+      package_data={'vickitrix': ['*.py', './rules/*']},
       zip_safe=True,
       install_requires=[
       		'tweepy', 'gdax', 'pycrypto'
@@ -18,8 +18,8 @@ setup(name='vickitrix',
         'console_scripts': [
             'vickitrix=vickitrix:go',
         ],},
-      keywords = ['bitcoin', 'btc', 'ethereum', 'eth', 'twitter'],
-      classifiers = [
+      keywords=['bitcoin', 'btc', 'ethereum', 'eth', 'twitter'],
+      classifiers=[
           'Programming Language :: Python :: 2',
           'Intended Audience :: Developers',
           'Intended Audience :: Science/Research',
