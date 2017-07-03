@@ -26,7 +26,7 @@ You'll need some keys and secrets and passcodes from Twitter and GDAX. `vickitri
 
         python vickitrix configure
         
-    This allows you to create (or overwrite) a profile with a name of your choice. (Entering nothing makes the profile name `default`, which is nice because then you won't have to specify the profile name at the command line when you `vickitrix trade`.) You'll be asked to enter credentials from the browser tabs you left open in Preliminaries, so do that.
+    This allows you to create (or overwrite) a profile with a name of your choice. (Entering nothing makes the profile name `default`, which is nice because then you won't have to specify the profile name at the command line when you `vickitrix trade`.) You'll be asked to enter credentials from the browser tabs you left open in Preliminaries. You'll also be asked to enter a password, which you'll need every time you `vickitrix trade`.
 4. Edit the rules in `vickirules.py` so they do what you want. `vickirules.py` creates a Python list of dictionaries called `rules`, where each dictionary has the following keys:
     * `handle`: the Twitter handle the rule refers to
     * `action`: either `buy` or `sell`
@@ -39,7 +39,7 @@ With the default rules, you buy all the ETH you can when @vickicryptobot goes lo
         
         python vickitrix trade --profile <profile name goes here> --rules <path to rules file>
         
-   Leave out the `--profile` to use the default profile, and `--rules` to use the `vickirules.py` file in the same directory as the `vickitrix` script. `vickitrix` will listen for tweets that match the conditions from the rules in `vickirules.py` and perform the specified actions.
+   , and enter the profile's password. Leave out the `--profile` to use the default profile, and leave out `--rules` to use the `vickirules.py` file in the same directory as the `vickitrix` script. `vickitrix` will listen for tweets that match the conditions from the rules in `vickirules.py` and perform the specified actions.
 
 ## Contributing
 
