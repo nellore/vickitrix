@@ -22,7 +22,7 @@ You'll need some keys and secrets and passcodes from Twitter and GDAX. `vickitri
         python vickitrix configure
         
     This allows you to create (or overwrite) a profile with a name of your choice. (Entering nothing makes the profile name `default`, which is nice because then you won't have to specify the profile name at the command line when you turn on the `vickitrix` tweet monitor/trader.) You'll be asked to enter credentials from the browser tabs you left open in Preliminaries, so do that.
-3. Edit the rules in `rules.py` so they do what you want. `rules.py` creates a Python list of dictionaries called `rules`, where each dictionary has the following keys:
+3. Edit the rules in `vickirules.py` so they do what you want. `vickirules.py` creates a Python list of dictionaries called `rules`, where each dictionary has the following keys:
     * `handle`: the Twitter handle the rule refers to
     * `action`: either `buy` or `sell`
     * `product`: a valid [GDAX product ID](https://docs.gdax.com/#products)
