@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 """
 vickitrix
 
@@ -7,6 +7,9 @@ uses rules specified in file to make market trades on GDAX using
 https://github.com/danpaquin/GDAX-Python. Default rules are stored in 
 rules/vicki.py and follow the tweets of @vickicryptobot.
 """
+from __future__ import print_function
+
+import sys
 
 _help_intro = """vickitrix allows users to base GDAX trades on tweets."""
 _key_derivation_iterations = 5000
@@ -42,7 +45,6 @@ import time
 import argparse
 import getpass
 import datetime
-import sys
 import base64
 
 def help_formatter(prog):
@@ -204,8 +206,6 @@ class TradeListener(tweepy.StreamListener):
 
 def go():
     """ Entry point """
-    if not (sys.version_info >= (2, 7) and sys.version_info[0] == 2):
-        raise RuntimeError('vickitrix should be run using Python 2.7.x.')
     # Print file's docstring if -h is invoked
     parser = argparse.ArgumentParser(description=_help_intro, 
                 formatter_class=help_formatter)
@@ -260,7 +260,7 @@ def go():
                 raise
         # Grab and write all necessary credentials
         config_file = os.path.join(key_dir, 'config')
-        print 'Enter a name for a new profile (default): ',
+        print('Enter a name for a new profile (default): ', end='')
         profile_name = raw_input()
         if not profile_name: profile_name = 'default'
         salt = Random.new().read(AES.block_size)
@@ -295,19 +295,21 @@ def go():
                     line = config_stream.readline().rstrip('\n')
         with open(config_file, 'wb') as config_stream:
             for line in previous_lines_to_write:
-                print >>config_stream, line
-            print >>config_stream, ''.join(['[', profile_name, ']'])
-            print >>config_stream, ''.join(['Salt: ', base64.b64encode(salt)])
+                print(line, file=config_stream)
+            print(''.join(['[', profile_name, ']']), file=config_stream)
+            print(''.join(['Salt: ', base64.b64encode(salt)]),
+                    file=config_stream)
             for token in ['GDAX key', 'GDAX secret', 'GDAX passphrase',
                             'Twitter consumer key', 'Twitter consumer secret',
                             'Twitter access token',
                             'Twitter access token secret']:
                 if 'key' in token:
-                    print ''.join(['Enter ', token, ':']),
+                    print(''.join(['Enter ', token, ':']), end='')
                     '''Write it in plaintext if it's a public key; then the 
                     user can open the config file and know which keys are in 
                     use.'''
-                    print >>config_stream, ''.join([token, ': ', raw_input()])
+                    print(''.join([token, ': ', raw_input()]),
+                            file=config_stream)
                 else:
                     # A warning to developers in a variable name
                     unencoded_and_not_to_be_written_to_disk = getpass.getpass(
@@ -315,19 +317,19 @@ def go():
                                     )
                     iv = Random.new().read(AES.block_size)
                     cipher = AES.new(key, AES.MODE_CFB, iv)
-                    print >>config_stream, ''.join([
+                    print(''.join([
                             token,
                             ' (AES256-encrypted using profile password): ',
                             base64.b64encode(iv + cipher.encrypt(
                                 unencoded_and_not_to_be_written_to_disk
-                        ))])
-        print ('Configured profile "{}". Encrypted credentials have been '
+                            ))]), file=config_stream)
+        print(('Configured profile "{}". Encrypted credentials have been '
                'stored in {}. '
                'Now use the "trade" subcommand to '
                'trigger trades with new tweets.').format(
                         profile_name,
                         config_file
-                    )
+                    ))
     elif args.subparser_name == 'trade':
         # Set and check rules
         from imp import load_source
