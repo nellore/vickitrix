@@ -1,6 +1,6 @@
 # vickitrix v0.1.0
 
-`vickitrix` makes crypto trades on GDAX based on tweets. Its development and name were inspired by the Twitter bot [@vickicryptobot](https://twitter.com/vickicryptobot), but `vickitrix` is responsive to arbitrary rules about the content of status updates on Twitter. Here's how to get it to work.
+`vickitrix` makes crypto trades on GDAX based on tweets. Its development and name were inspired by [@vickicryptobot](https://twitter.com/vickicryptobot), but `vickitrix` is responsive to arbitrary rules about the content of status updates on Twitter. Here's how to get it to work.
 
 ## Preliminaries
 
@@ -23,7 +23,7 @@ You'll need some keys and secrets and passcodes from Twitter and GDAX. `vickitri
     This allows you to create (or overwrite) a profile with a name of your choice. (Entering nothing makes the profile name `default`, which is nice because then you won't have to specify the profile name at the command line when you `vickitrix trade`.) You'll be asked to enter credentials from the browser tabs you left open in Preliminaries. You'll also be asked to enter a password, which you'll need every time you `vickitrix trade`.
 3. Grab and edit the rules in [`vickitrix/rules/vicki.py`](vickitrix/rules/vicki.py) so they do what you want. `vickitrix/rules/vicki.py` creates a Python list of dictionaries called `rules`, where each dictionary has the following keys:
     * `handles`: a list of the Twitter handles to which the rule should apply, where commas are interpreted as logical ORs. At least one of `handles` or `keywords` must be specified in a rule. However, nothing is stopping you from passing an empty list, which `vickitrix` interprets as no filter---but do this at your own peril.
-    * `keywords`: a list of keywords from tweets to which the rule should apply, where commas are interpreted as logical ORs.
+    * `keywords`: a list of keywords from tweets to which the rule should apply, where commas are interpreted as logical ORs. If both `handles` and `keyword` are specified, there's a logical OR between the two lists as well.
     * `action`: either `buy` or `sell`
     * `product`: a valid [GDAX product ID](https://docs.gdax.com/#products). It looks like `<base currency>-<quote currency>`.
     * `funds`: see [Market Order Parameters](https://docs.gdax.com/#place-a-new-order) for a definition. The value may be any Python-parseable math expression involving `{available}`, which `vickitrix` takes to be the amount of the _quote_ currency available for trading in your account. At least one of `funds` or `size` must be specified in a rule.
@@ -43,3 +43,10 @@ Check out [`vickitrix/rules/sentiment.py`](vickitrix/rules/sentiment.py), which 
 ## Contributing
 
 Pull requests are welcome! Fork at will! If you've written a substantial contribution, and you'd like to be added as a collaborator, reach out to me.
+
+## Disclaimer
+
+If you use this software, you're making and/or losing money because someone or something you probably don't know tweeted, which is totally crazy. Don't take risks with money you can't afford to lose.
+
+This software is supplied "as is" without any warranties or support. I assume no liability or responsibility for use of the software.
+
