@@ -13,24 +13,24 @@ You'll need some keys and secrets and passcodes from Twitter and GDAX. `vickitri
 5. Create an API key with permissions to view and trade. You should now see a key, secret, and passphrase. Don't close the tab, or you'll lose the secret forever---which isn't the end of the world; you'll just have to regenerate an API key.
 
 ## Install and configure `vickitrix`
-1. Clone this repo and `cd` there:
-        
-        git clone https://github.com/nellore/vickitrix
-        cd vickitrix
-2. Install some required packages:
+1. Install some required packages:
 
         pip install tweepy
         pip install gdax
         pip install pycrypto
+2. Clone this repo and `cd` into it:
+        
+        git clone https://github.com/nellore/vickitrix
+        cd vickitrix
 3. Configure `vickitrix` by running
 
         python vickitrix configure
         
-    This allows you to create (or overwrite) a profile with a name of your choice. (Entering nothing makes the profile name `default`, which is nice because then you won't have to specify the profile name at the command line when you turn on the `vickitrix` tweet monitor/trader.) You'll be asked to enter credentials from the browser tabs you left open in Preliminaries, so do that.
+    This allows you to create (or overwrite) a profile with a name of your choice. (Entering nothing makes the profile name `default`, which is nice because then you won't have to specify the profile name at the command line when you `vickitrix trade`.) You'll be asked to enter credentials from the browser tabs you left open in Preliminaries, so do that.
 4. Edit the rules in `vickirules.py` so they do what you want. `vickirules.py` creates a Python list of dictionaries called `rules`, where each dictionary has the following keys:
     * `handle`: the Twitter handle the rule refers to
     * `action`: either `buy` or `sell`
-    * `product`: a valid [GDAX product ID](https://docs.gdax.com/#products)
+    * `product`: a valid [GDAX product ID](https://docs.gdax.com/#products). It looks like `<base currency>-<quote currency>`.
     * `funds`: see [Market Order Parameters](https://docs.gdax.com/#place-a-new-order) for a definition. The value may be any Python-parseable math expression involving `{available}`, which `vickitrix` takes to be the amount of the _quote_ currency available for trading in your account. At least one of `funds` or `size` must be specified in a rule.
     * `size`: see [Market Order Parameters](https://docs.gdax.com/#place-a-new-order) for a definition. The value may be any Python-parseable math expression involving `{available}`, which `vickitrix` takes to be the amount of the _base_ currency available for trading in your account. At least one of `funds` or `size` must be specified in a rule.
     * `condition`: any Python-parseable expression; use `{tweet}` to refer to the content of a tweet.
