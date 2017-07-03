@@ -2,9 +2,8 @@ vickitrix v0.1.0
 ================
 
 ``vickitrix`` makes crypto trades on GDAX based on tweets. Its development and name were inspired by
-the Twitter bot [@vickicryptobot](https://twitter.com/vickicryptobot), but ``vickitrix`` is
-responsive to arbitrary rules about the content of status updates on Twitter. Here's how to get it
-to work.
+[@vickicryptobot](https://twitter.com/vickicryptobot), but ``vickitrix`` is responsive to arbitrary
+rules about the content of status updates on Twitter. Here's how to get it to work.
 
 Preliminaries
 -------------
@@ -61,7 +60,8 @@ Install and configure ``vickitrix``
       rule. However, nothing is stopping you from passing an empty list, which ``vickitrix``
       interprets as no filter---but do this at your own peril.
    -  ``keywords``: a list of keywords from tweets to which the rule should apply, where commas are
-      interpreted as logical ORs.
+      interpreted as logical ORs. If both ``handles`` and ``keyword`` are specified, there's a
+      logical OR between the two lists as well.
    -  ``action``: either ``buy`` or ``sell``
    -  ``product``: a valid `GDAX product ID <https://docs.gdax.com/#products>`__. It looks like
       ``<base currency>-<quote currency>``.
@@ -101,3 +101,13 @@ Contributing
 
 Pull requests are welcome! Fork at will! If you've written a substantial contribution, and you'd
 like to be added as a collaborator, reach out to me.
+
+Disclaimer
+----------
+
+If you use this software, you're making and/or losing money because someone or something you
+probably don't know tweeted, which is totally crazy. Don't take risks with money you can't afford to
+lose.
+
+This software is supplied "as is" without any warranties or support. I assume no liability or
+responsibility for use of the software.
