@@ -36,6 +36,11 @@ You'll need some keys and secrets and passcodes from Twitter and GDAX. `vickitri
     * `condition`: any Python-parseable expression; use `{tweet}` to refer to the content of a tweet.
 With the default rules, you buy all the ETH you can when @vickicryptobot goes long, and you sell all the ETH you can when @vickicryptobot goes short.
 5. Run
+        
         python vickitrix trade --profile <profile name goes here> --rules <path to rules file>
         
-   Leave out the `--profile` to use the default profile, and `--rules` to use the `rules.py` file in the same directory as the `vickitrix` script.
+   Leave out the `--profile` to use the default profile, and `--rules` to use the `vickirules.py` file in the same directory as the `vickitrix` script. `vickitrix` will listen for tweets that match the conditions from the rules in `vickirules.py` and perform the specified actions.
+
+## Contributing
+
+Pull requests are welcome! Fork at will! If you have a substantial contribution to make, and you'll like to be added as a collaborator, reach out to me.
