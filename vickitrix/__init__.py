@@ -306,7 +306,7 @@ def go():
             print(''.join(['[', profile_name, ']']), file=config_stream)
         # Now change permissions
         try:
-            os.chmod(config_file, 0600)
+            os.chmod(config_file, 0o600)
         except OSError as e:
             if e.errno == errno.EPERM:
                 print >>sys.stderr, (
