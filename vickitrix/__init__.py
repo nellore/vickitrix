@@ -293,11 +293,11 @@ def go():
                     if line[0] == '[' and line[-1] == ']':
                         if profile_name == line[1:-1]:
                             # Skip this profile
-                            for _ in xrange(8): config_stream.readline()
+                            for _ in range(8): config_stream.readline()
                             line = config_stream.readline().rstrip('\n')
                             continue
                         previous_lines_to_write.append(line)
-                        for _ in xrange(8):
+                        for _ in range(8):
                             previous_lines_to_write.append(
                                         config_stream.readline().rstrip('\n')
                                     )
@@ -417,7 +417,7 @@ def go():
                                 dkLen=32, count=_key_derivation_iterations
                             )
                         keys_and_secrets = []
-                        for _ in xrange(7):
+                        for _ in range(7):
                             item, _, encoded = config_stream.readline().rstrip(
                                                     '\n').partition(': ')
                             if 'key' in item:
@@ -436,7 +436,7 @@ def go():
                                 )
                     else:
                         # Skip profile
-                        for _ in xrange(8): config_stream.readline()
+                        for _ in range(8): config_stream.readline()
                     line = config_stream.readline().rstrip('\n')
         except IOError as e:
             e.message = (
