@@ -27,7 +27,7 @@ You'll need some keys and secrets and passcodes from Twitter and GDAX. `vickitri
         python vickitrix configure
         
     This allows you to create (or overwrite) a profile with a name of your choice. (Entering nothing makes the profile name `default`, which is nice because then you won't have to specify the profile name at the command line when you `vickitrix trade`.) You'll be asked to enter credentials from the browser tabs you left open in Preliminaries. You'll also be asked to enter a password, which you'll need every time you `vickitrix trade`.
-4. Edit the rules in `rules/vicki.py` so they do what you want. `rules/vicki.py` creates a Python list of dictionaries called `rules`, where each dictionary has the following keys:
+4. Edit the rules in `rules/vicki.py` so they do what you want. [`rules/vicki.py`](rules/vicki.py) creates a Python list of dictionaries called `rules`, where each dictionary has the following keys:
     * `handles`: a list of the Twitter handles to which the rule should apply, where commas are interpreted as logical ORs. At least one of `handles` or `keywords` must be specified in a rule. However, nothing is stopping you from passing an empty list, which `vickitrix` interprets as no filter---but do this at your own peril.
     * `keywords`: a list of keywords from tweets to which the rule should apply, where commas are interpreted as logical ORs.
     * `action`: either `buy` or `sell`
@@ -44,8 +44,8 @@ With the default rules, you buy all the ETH you can when @vickicryptobot goes lo
 
 ## Experimental rules
 
-Check out `rules/sentiment.py`, which buys (sells) a miniscule amount of ETH when the words "good" ("bad") and "ethereum" are found in a tweet. Now imagine the possibilities---what would make inventive or more effective rules?
+Check out [`rules/sentiment.py`](rules/sentiment.py), which buys (sells) a miniscule amount of ETH when the words "good" ("bad") and "ethereum" are found in a tweet. Now imagine the possibilities---what would make inventive or more effective rules?
 
 ## Contributing
 
-Pull requests are welcome! Fork at will! If you have a substantial contribution to make, and you'd like to be added as a collaborator, reach out to me.
+Pull requests are welcome! Fork at will! If you've written a substantial contribution, and you'd like to be added as a collaborator, reach out to me.
