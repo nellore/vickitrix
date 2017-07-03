@@ -31,7 +31,7 @@ You'll need some keys and secrets and passcodes from Twitter and GDAX. `vickitri
     * `order`: a dictionary of HTTP request parameters for an order as described in the [GDAX docs](https://docs.gdax.com/#orders). `vickitrix` respects default values of parameters given there if any are left out in a given rule. Some details on particular keys from the `order` dictionary:
         * `product_id`: a valid [GDAX product ID](https://docs.gdax.com/#products). It looks like `<base currency>-<quote currency>`.
         * `funds`, `size`, `price`: the value may be any Python-parsable math expression involving `{tweet}` (the content of the current matched tweet) and/or `{available[<currency>]}`, where `<currency>` is one of `ETH`, `BTC`, `LTC`, and `USD`. `vickitrix` sets `{available[<currency>]}` to the amount of `<currency>` available for trading in your account right before making an order. You can use regular expressions here with Python's [`re`](https://docs.python.org/2/library/re.html) module.
-    * `condition`: any Python-parsable expression involving `{tweet}` and `{available[<currency>]`. Regular expression can be used here with the `re` module.
+    * `condition`: any Python-parsable expression involving `{tweet}` and `{available[<currency>]`. Regular expressions can be used here with the `re` module.
 With the default rules, you buy all the ETH you can when @vickicryptobot goes long, and you sell all the ETH you can when @vickicryptobot goes short.
 4. Run
         
