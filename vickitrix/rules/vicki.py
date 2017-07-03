@@ -1,16 +1,22 @@
 rules = [
     {
         'handles' : ['vickicryptobot'],
-        'action' : 'buy',
-        'product' : 'ETH-USD',
-        'funds' : '{available}',
-        'condition' : '"ETHUSD" in {tweet} and "long" in {tweet}'
+        'condition' : '"ETHUSD" in {tweet} and "long" in {tweet}',
+        'order' : { 
+                    'side' : 'buy',
+                    'type' : 'market',
+                    'product_id' : 'ETH-USD',
+                    'funds' : '{available[USD]}'
+                }
     },
     {
         'handles' : ['vickicryptobot'],
-        'action' : 'sell',
-        'product' : 'ETH-USD',
-        'size' : '{available}',
-        'condition' : '"ETHUSD" in {tweet} and "short" in {tweet}'
+        'condition' : '"ETHUSD" in {tweet} and "short" in {tweet}',
+        'order' : { 
+                    'side' : 'sell',
+                    'type' : 'market',
+                    'product_id' : 'ETH-USD',
+                    'size' : '{available[ETH]}'
+                }
     }
 ]
