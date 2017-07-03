@@ -21,6 +21,7 @@ setup(name='vickitrix',
       keywords=['bitcoin', 'btc', 'ethereum', 'eth', 'twitter'],
       classifiers=[
           'Programming Language :: Python :: 2',
+          'Programming Language :: Python :: 3',
           'Intended Audience :: Developers',
           'Intended Audience :: Science/Research',
           'Operating System :: MacOS',
