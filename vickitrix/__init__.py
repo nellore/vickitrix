@@ -204,7 +204,7 @@ class TradeListener(tweepy.StreamListener):
                                                                 rule['action']
                                                             )
                         )
-                print_to_screen(timestamp() + 'Trade complete.')
+                print_to_screen(timestamp() + 'Trade requested.')
                 time.sleep(self.sleep_time)
                 get_dough(self.gdax_client, status_update=True)
 
