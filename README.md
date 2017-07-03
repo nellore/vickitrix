@@ -17,12 +17,17 @@ You'll need some keys and secrets and passcodes from Twitter and GDAX. `vickitri
         
         git clone https://github.com/nellore/vickitrix
         cd vickitrix
-2. Configure `vickitrix` by running
+2. Install some required packages:
+
+        pip install tweepy
+        pip install gdax
+        pip install pycrypto
+3. Configure `vickitrix` by running
 
         python vickitrix configure
         
     This allows you to create (or overwrite) a profile with a name of your choice. (Entering nothing makes the profile name `default`, which is nice because then you won't have to specify the profile name at the command line when you turn on the `vickitrix` tweet monitor/trader.) You'll be asked to enter credentials from the browser tabs you left open in Preliminaries, so do that.
-3. Edit the rules in `vickirules.py` so they do what you want. `vickirules.py` creates a Python list of dictionaries called `rules`, where each dictionary has the following keys:
+4. Edit the rules in `vickirules.py` so they do what you want. `vickirules.py` creates a Python list of dictionaries called `rules`, where each dictionary has the following keys:
     * `handle`: the Twitter handle the rule refers to
     * `action`: either `buy` or `sell`
     * `product`: a valid [GDAX product ID](https://docs.gdax.com/#products)
@@ -30,7 +35,7 @@ You'll need some keys and secrets and passcodes from Twitter and GDAX. `vickitri
     * `size`: see [Market Order Parameters](https://docs.gdax.com/#place-a-new-order) for a definition. The value may be any Python-parseable math expression involving `{available}`, which `vickitrix` takes to be the amount of the _base_ currency available for trading in your account. At least one of `funds` or `size` must be specified in a rule.
     * `condition`: any Python-parseable expression; use `{tweet}` to refer to the content of a tweet.
 With the default rules, you buy all the ETH you can when @vickicryptobot goes long, and you sell all the ETH you can when @vickicryptobot goes short.
-4. Run
+5. Run
         python vickitrix trade --profile <profile name goes here> --rules <path to rules file>
         
    Leave out the `--profile` to use the default profile, and `--rules` to use the `rules.py` file in the same directory as the `vickitrix` script.
