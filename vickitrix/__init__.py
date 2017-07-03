@@ -306,7 +306,7 @@ def go():
             for line in previous_lines_to_write:
                 print(line, file=config_stream)
             print(''.join(['[', profile_name, ']']), file=config_stream)
-            print(''.join(['Salt: ', base64.b64encode(salt)]),
+            print(''.join(['Salt: ', base64.b64encode(salt).decode()]),
                     file=config_stream)
             for token in ['GDAX key', 'GDAX secret', 'GDAX passphrase',
                             'Twitter consumer key', 'Twitter consumer secret',
@@ -331,7 +331,7 @@ def go():
                             ' (AES256-encrypted using profile password): ',
                             base64.b64encode(iv + cipher.encrypt(
                                 unencoded_and_not_to_be_written_to_disk
-                            ))]), file=config_stream)
+                            )).decode()]), file=config_stream)
         print(('Configured profile "{}". Encrypted credentials have been '
                'stored in {}. '
                'Now use the "trade" subcommand to '
