@@ -10,6 +10,9 @@ setup(name='vickitrix',
       packages=['vickitrix'],
       package_data={'vickitrix': ['*', './rules/*']},
       zip_safe=True,
+      install_requires=[
+      		'tweepy', 'gdax', 'pycrypto'
+      	],
       entry_points={
         'console_scripts': [
             'vickitrix=vickitrix:go',
