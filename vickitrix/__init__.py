@@ -11,6 +11,12 @@ from __future__ import print_function
 
 import sys
 
+# For 2-3 compatibility
+try:
+    input = raw_input
+except NameError:
+    pass
+
 _help_intro = """vickitrix allows users to base GDAX trades on tweets."""
 _key_derivation_iterations = 5000
 
