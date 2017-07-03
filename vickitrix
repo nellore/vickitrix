@@ -90,6 +90,16 @@ def timestamp():
     return time.strftime('%A, %b %d, %Y at %I:%M:%S %p %Z || ',
                          time.localtime(time.time()))
 
+def stringify_rule(rule):
+    """ Prettifies printout of rule as string.
+
+        rule: rule
+
+        Return value: rule string
+    """
+    return os.linesep.join([': '.join([key, str(value)])
+                                for key, value in rule.items()])
+
 def get_dough(gdax_client, status_update=False):
     """ Retrieve dough in user accounts
 
@@ -110,18 +120,22 @@ def get_dough(gdax_client, status_update=False):
 class TradeListener(tweepy.StreamListener):
     """ Trades on GDAX based on tweets. """
 
-    def __init__(self, rules, gdax_client, api=None):
+    def __init__(self, rules, gdax_client, sleep_time=0.5, api=None):
         super(TradeListener, self).__init__(api=api)
         self.rules = rules
         self.gdax_client = gdax_client
+        self.sleep_time = sleep_time
 
     def on_status(self, status):
         for rule in self.rules:
-            if status.author.screen_name == rule['handle'] and eval(
+            if ((not rule['handles'])
+                 or status.author.screen_name in rule['handles']) and (
+                 (not rule['keywords'])
+                 or any([keyword in status.text
+                            for keyword in rule['keywords']])) and eval(
                         rule['condition'].format(
-                            tweet='"' + status.text.replace('"', '\\"') + '"'
-                        )
-                    ):
+                            tweet='status.text'
+                    )):
                 if ((hasattr(status, 'retweeted_status')
                      and status.retweeted_status)
                     or status.in_reply_to_status_id
@@ -132,12 +146,12 @@ class TradeListener(tweepy.StreamListener):
                     # This is an RT or reply; don't do anything
                     return
                 # Condition satisfied! Perform action
-                print_to_screen('****')
-                print_to_screen(timestamp() + 'TWEET MATCHED')
-                print_to_screen(''.join(
-                        ['@', status.author.screen_name, ': ', status.text])
+                print_to_screen(
+                        ''.join(
+                            [timestamp(), 'TWEET MATCHED || @',
+                             status.author.screen_name, ': ', status.text]
+                        )
                     )
-                print_to_screen('****')
                 accounts = get_dough(gdax_client, status_update=True)
                 base_currency, quote_currency = rule['product'].split('-')
                 keywords = { 'type' : 'market',
@@ -158,13 +172,15 @@ class TradeListener(tweepy.StreamListener):
                                 )
                         ))
                     not_enough = (int(float(keywords['funds']) * 100) == 0)
-                print_to_screen('****')
-                print_to_screen(timestamp() + 'TRADING')
-                for keyword in keywords:
-                    print_to_screen(': '.join([keyword, keywords[keyword]]))
-                print_to_screen('****')
+                print_to_screen(''.join(
+                            [timestamp(), 'TRADING || '] +
+                            [', '.join([': '.join([keyword, keywords[keyword]])
+                                        for keyword in keywords])]
+                        ))
                 if not_enough:
-                    print_to_screen('Nothing to trade! Continuing...')
+                    print_to_screen(
+                            timestamp() + 'Nothing to trade! Continuing...'
+                        )
                     return
                 if rule['action'] == 'buy':
                     self.gdax_client.buy(**keywords)
@@ -178,7 +194,7 @@ class TradeListener(tweepy.StreamListener):
                                                             )
                         )
                 print_to_screen(timestamp() + 'Trade complete.')
-                time.sleep(10)
+                time.sleep(self.sleep_time)
                 get_dough(gdax_client, status_update=True)
 
     def on_error(self, status_code):
@@ -219,14 +235,19 @@ if __name__ == '__main__':
             help='which profile to use for trading'
         )
     trade_parser.add_argument('--rules', '-r', type=str, required=False,
-            default=os.path.join(os.path.realpath(__file__), 'rules.py'),
+            default=os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                    'rules', 'vicki.py'),
             help=('rules file; this is Python that sets the variable "rules" '
                   'to a list of dictionaries')
         )
-    trade_parser.add_argument('--interval', '-i', type=int, required=False,
+    trade_parser.add_argument('--interval', '-i', type=float, required=False,
             default=905,
             help=('how long to wait (in s) before reattempting to connect '
                   'after getting rate-limited')
+        )
+    trade_parser.add_argument('--sleep', '-s', type=float, required=False,
+            default=0.5,
+            help='how long to wait (in s) after a trade'
         )
     args = parser.parse_args()
     key_dir = os.path.join(os.path.expanduser('~'), '.vickitrix')
@@ -307,6 +328,61 @@ if __name__ == '__main__':
                         config_file
                     )
     elif args.subparser_name == 'trade':
+        # Set and check rules
+        from imp import load_source
+        try:
+            rules = load_source('rules', args.rules).rules
+        except IOError:
+            raise IOError(
+                    'Cannot find or access rules file "{}".'.format(args.rules)
+                )
+        import copy
+        # Add missing keys so listener doesn't fail
+        new_rules = copy.copy(rules)
+        for i, rule in enumerate(rules):
+            for left, right in (('handles', 'keywords'), ('size', 'funds')):
+                if left not in rule and right not in rule:
+                    raise RuntimeError(''.join([
+                            ('A rule must have at least one of "{}" or '
+                             '"{}", but this rule from the file "{}" '
+                             'doesn\'t:').format(left, right, args.rules),
+                            os.linesep, stringify_rule(rule)
+                        ])
+                    )
+                if left not in rule and left != 'size':
+                    new_rules[i][left] = []
+                if right not in rule and right != 'funds':
+                    new_rules[i][right] = []
+            for stack in ('size', 'funds'):
+                try:
+                    eval(rule[stack].format(available=10))
+                except KeyError:
+                    pass
+                except Exception as e:
+                    raise RuntimeError(''.join([
+                            ('"{}" from the following rule in the file '
+                             '"{}" could not be '
+                             'evaluated; check the format '
+                             'and try again: ').format(stack, args.rules),
+                            os.linesep, stringify_rule(rule)
+                        ])
+                    )
+            try:
+                eval(rule['condition'].format(
+                        tweet='"The rain in Spain stays mainly in the plain."'
+                    ))
+            except KeyError:
+                new_rules[i]['condition'] = 'True'
+            except:
+                raise RuntimeError(''.join([
+                        ('"condition" from the following rule in the file '
+                         '"{}" could not be '
+                         'evaluated; check the format '
+                         'and try again: ').format(args.rules),
+                        os.linesep, stringify_rule(rule)
+                    ])
+                )
+        rules = new_rules
         # Use _last_ entry in config file with profile name
         key = None
         try:
@@ -378,10 +454,11 @@ if __name__ == '__main__':
                       'b) You entered the wrong password above.']
                 ))
             exit(1)
-        # Grab rules for trading
-        from vickirules import rules
         # Get all handles to monitor
-        handles = set([rule['handle'] for rule in rules])
+        handles, keywords = set(), set()
+        for rule in rules:
+            handles.update(rule['handles'])
+            keywords.update(rule['keywords'])
         handles_to_user_ids = {}
         for handle in handles:
             try:
@@ -395,11 +472,13 @@ if __name__ == '__main__':
             raise RuntimeError('No followable Twitter handles found in rules!')
         trade_listener = TradeListener(rules, gdax_client)
         stream = tweepy.Stream(
-                    auth=twitter_client.auth, listener=trade_listener
+                    auth=twitter_client.auth, listener=trade_listener,
+                    sleep_time=args.sleep
                 )
         while True:
-            print_to_screen('Listening for tweets...')
-            stream.filter(follow=handles_to_user_ids.values())
+            print_to_screen('Listening for tweets; hit CTRL+C to quit...')
+            stream.filter(follow=handles_to_user_ids.values(),
+                            track=list(keywords))
             print_to_screen(
                     timestamp()
                     + 'Rate limit error. Restarting in {} s...'.format(
