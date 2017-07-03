@@ -22,28 +22,31 @@ _key_derivation_iterations = 5000
 
 try:
     import gdax
-except ImportError:
-    raise ImportError(
-        'vickitrix requires GDAX-Python. Install it with "pip install gdax".'
-    )
+except ImportError as e:
+    e.message = (
+         'vickitrix requires GDAX-Python. Install it with "pip install gdax".'
+        )
+    raise
 
 try:
     import tweepy
-except ImportError:
-    raise ImportError(
-        'vickitrix requires tweepy. Install it with '
-        '"pip install tweepy".'
-    )
+except ImportError as e:
+    e.message = (
+            'vickitrix requires tweepy. Install it with '
+            '"pip install tweepy".'
+        )
+    raise
 
 try:
     from Crypto.Cipher import AES
     from Crypto.Protocol import KDF
     from Crypto import Random
 except ImportError:
-    raise ImportError(
+    e.message = (
         'vickitrix requires PyCrypto. Install it with '
         '"pip install pycrypto".'
     )
+    raise
 
 import os
 import errno
@@ -299,7 +302,7 @@ def go():
                                         config_stream.readline().rstrip('\n')
                                     )
                     line = config_stream.readline().rstrip('\n')
-        with open(config_file, 'wb') as config_stream:
+        with open(config_file, 'w') as config_stream:
             for line in previous_lines_to_write:
                 print(line, file=config_stream)
             print(''.join(['[', profile_name, ']']), file=config_stream)
@@ -341,10 +344,11 @@ def go():
         from imp import load_source
         try:
             rules = load_source('rules', args.rules).rules
-        except IOError:
-            raise IOError(
-                    'Cannot find or access rules file "{}".'.format(args.rules)
-                )
+        except IOError as e:
+            e.message = 'Cannot find or access rules file "{}".'.format(
+                                                                    args.rules
+                                                                )
+            raise
         import copy
         # Add missing keys so listener doesn't fail
         new_rules = copy.copy(rules)
@@ -434,12 +438,13 @@ def go():
                         # Skip profile
                         for _ in xrange(8): config_stream.readline()
                     line = config_stream.readline().rstrip('\n')
-        except IOError:
-            raise IOError(
+        except IOError as e:
+            e.message = (
                     'Cannot find vickitrix config file. Use '
                     '"vickitrix configure" to configure vickitrix '
                     'before trading.'
                 )
+            raise
         try:
             # Instantiate GDAX and Twitter clients
             gdax_client = gdax.AuthenticatedClient(
