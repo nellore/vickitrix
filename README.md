@@ -1,4 +1,4 @@
-# vickitrix v0.1.0
+# vickitrix v0.1.1
 
 `vickitrix` makes crypto trades on GDAX according to rules about new tweets. Its development and name were inspired by [@vickicryptobot](https://twitter.com/vickicryptobot); in fact, the default rules [`vickitrix/rules/vicki.py`](vickitrix/rules/vicki.py) sell ETH when @vickicryptobot goes short on ETH-USD and buy ETH when @vickicryptobot goes long on ETH-USD. However, `vickitrix` can accommodate arbitrary rules about the content of status updates on Twitter. For example, the rules in [`vickitrix/rules/sentiment.py`](vickitrix/rules/sentiment.py) buy (sell) a miniscule amount of ETH when the words "good" ("bad") and "ethereum" are found in a tweet. Now imagine the possibilities---what rules do you think would be effective? Experiment, create issues, and make pull requests!
 
@@ -28,11 +28,10 @@ You'll need some keys and secrets and passcodes from Twitter and GDAX. `vickitri
 3. Grab and edit the rules in [`vickitrix/rules/vicki.py`](vickitrix/rules/vicki.py) so they do what you want. `vickitrix/rules/vicki.py` creates a Python list of dictionaries called `rules`, where each dictionary has the following keys:
     * `handles`: a list of the Twitter handles to which the rule should apply, where commas are interpreted as logical ORs. At least one of `handles` or `keywords` must be specified in a rule. However, nothing is stopping you from passing an empty list, which `vickitrix` interprets as no filter---but do this at your own peril.
     * `keywords`: a list of keywords from tweets to which the rule should apply, where commas are interpreted as logical ORs. If both `handles` and `keyword` are specified, there's a logical OR between the two lists as well.
-    * `action`: either `buy` or `sell`
-    * `product`: a valid [GDAX product ID](https://docs.gdax.com/#products). It looks like `<base currency>-<quote currency>`.
-    * `funds`: see [Market Order Parameters](https://docs.gdax.com/#place-a-new-order) for a definition. The value may be any Python-parsable math expression involving `{available}`, which `vickitrix` takes to be the amount of the _quote_ currency available for trading in your account. At least one of `funds` or `size` must be specified in a rule.
-    * `size`: see [Market Order Parameters](https://docs.gdax.com/#place-a-new-order) for a definition. The value may be any Python-parsable math expression involving `{available}`, which `vickitrix` takes to be the amount of the _base_ currency available for trading in your account.
-    * `condition`: any Python-parsable expression; use `{tweet}` to refer to the content of a tweet.
+    * `order`: a dictionary of HTTP request parameters for an order as described in the [GDAX docs](https://docs.gdax.com/#orders). `vickitrix` respects default values of parameters given there if any are left out in a given rule. Note in particular some details on the following keys in the order dictionary:
+        * `product_id`: a valid [GDAX product ID](https://docs.gdax.com/#products). It looks like `<base currency>-<quote currency>`.
+        * `funds`, `price`, : the value may be any Python-parsable math expression involving `{tweet}` (the content of the current matched tweet) and/or `{available[<currency>]}`, where `<currency>` is one of `ETH`, `BTC`, `LTC`, and `USD`. `vickitrix` takes `{available[<currency>]}` to be the amount of `<currency>` available for trading in your account. You can use regular expressions here with Python's [`re`](https://docs.python.org/2/library/re.html) module.
+    * `condition`: any Python-parsable expression involving `{tweet}` and `{available[<currency>]`.
 With the default rules, you buy all the ETH you can when @vickicryptobot goes long, and you sell all the ETH you can when @vickicryptobot goes short.
 4. Run
         
