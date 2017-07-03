@@ -324,7 +324,7 @@ def go():
                     file=config_stream)
             for token in ['GDAX key', 'GDAX secret', 'GDAX passphrase',
                             'Twitter consumer key', 'Twitter consumer secret',
-                            'Twitter access token',
+                            'Twitter access token key',
                             'Twitter access token secret']:
                 if 'key' in token:
                     print(''.join(['Enter ', token, ': ']), end='')
