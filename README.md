@@ -1,10 +1,12 @@
 # vickitrix v0.1.0
 
-`vickitrix` makes crypto trades on GDAX based on tweets. Its development and name were inspired by [@vickicryptobot](https://twitter.com/vickicryptobot), but `vickitrix` is responsive to arbitrary rules about the content of status updates on Twitter. Here's how to get it to work.
+`vickitrix` makes crypto trades on GDAX according to rules about new tweets. Its development and name were inspired by [@vickicryptobot](https://twitter.com/vickicryptobot); in fact, the default rules [`vickitrix/rules/vicki.py`](vickitrix/rules/vicki.py) sell ETH when @vickicryptobot goes short on ETH-USD and buy ETH when @vickicryptobot goes long on ETH-USD. However, `vickitrix` can accommodate arbitrary rules about the content of status updates on Twitter. For example, the rules in [`vickitrix/rules/sentiment.py`](vickitrix/rules/sentiment.py) buy (sell) a miniscule amount of ETH when the words "good" ("bad") and "ethereum" are found in a tweet. Now imagine the possibilities---what would make inventive or more effective rules? Experiment, create issues, and make pull requests!
+
+Here's how to get `vickitrix` to work on your machine.
 
 ## Preliminaries
 
-You'll need some keys and secrets and passcodes from Twitter and GDAX. `vickitrix` will store these in a config file (`~/.vickitrix/config`) on disk, but it ensures the secrets and passcodes are AES256-encrypted so evildoers who grab your laptop while you're logged in can't easily swipe working credentials.
+Though `vickitrix` should work on Python 2 or 3 in Windows/UNIX/it's been tested mostly on Python 2.7 on a Macbook from late 2016 running Mac OS X Sierra. You'll need some keys and secrets and passcodes from Twitter and GDAX. `vickitrix` will store these in a config file (`~/.vickitrix/config`) on disk, but it ensures the secrets and passcodes are AES256-encrypted so evildoers who grab your laptop while you're logged in can't easily swipe working credentials.
 
 1. Open a new browser tab, and use it to [create a new Twitter app](https://apps.twitter.com/) after logging into Twitter. Name and describe it however you like, and specify no callback URL, but note Twitter also requires you enter some well-formed website URL to finish the process. You're allowed to write something like `https://placeholder.com/placeholder`. The thing will complain if your description isn't long enough, too. So dumb.
 2. Click the `Keys and Access Tokens` tab.
@@ -36,10 +38,6 @@ With the default rules, you buy all the ETH you can when @vickicryptobot goes lo
         
    , and enter the profile's password. Leave out the `--profile` to use the default profile, and leave out `--rules` to use the default `vickitrix/rules/vicki.py`. `vickitrix` will listen for tweets that match the conditions from the rules in `vickirules.py` and perform the specified actions.
    If after a trade's been made, the "available to trade" line makes it look like currency vanished into thin air, don't fret; this probably means the trade hasn't completed yet. You can increase the sleep time after a trade is requested and before the "available to trade" line is displayed with `--sleep`.
-
-## Experimental rules
-
-Check out [`vickitrix/rules/sentiment.py`](vickitrix/rules/sentiment.py), which buys (sells) a miniscule amount of ETH when the words "good" ("bad") and "ethereum" are found in a tweet. Now imagine the possibilities---what would make inventive or more effective rules? Experiment, create issues, and make pull requests!
 
 ## Contributing
 
