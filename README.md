@@ -1,6 +1,6 @@
 # vickitrix v0.1.0
 
-`vickitrix` makes crypto trades on GDAX based on tweets. Its development and name were inspired by the Twitter bot [@vickicryptobot](https://twitter.com/vickicryptobot), but `vickitrix` is responsive to arbitrary rules about the content of status updates on Twitter. Here's how to get it to work.
+`vickitrix` makes crypto trades on GDAX based on tweets. Its development and name were inspired by [@vickicryptobot](https://twitter.com/vickicryptobot), but `vickitrix` is responsive to arbitrary rules about the content of status updates on Twitter. Here's how to get it to work.
 
 ## Preliminaries
 
