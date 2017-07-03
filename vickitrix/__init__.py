@@ -202,7 +202,8 @@ class TradeListener(tweepy.StreamListener):
             #returning False in on_data disconnects the stream
             return False
 
-if __name__ == '__main__':
+def go():
+    """ Entry point """
     if not (sys.version_info >= (2, 7) and sys.version_info[0] == 2):
         raise RuntimeError('vickitrix should be run using Python 2.7.x.')
     # Print file's docstring if -h is invoked
