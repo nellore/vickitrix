@@ -2,21 +2,25 @@ rules = [
     {
         'keywords' : ['ethereum', 'good'],
         'condition' : '"good" in {tweet} and "ethereum" in {tweet}',
-        'order' : { 
-                    'side' : 'buy',
-                    'type' : 'market',
-                    'product_id' : 'ETH-USD',
-                    'funds' : '{available[USD]}*0.001'
-                }
+        'orders' : [
+                        { 
+                            'side' : 'buy',
+                            'type' : 'market',
+                            'product_id' : 'ETH-USD',
+                            'funds' : '{available[USD]}*0.001'
+                        }
+                    ]
     },
     {
         'keywords' : ['ethereum', 'bad'],
         'condition' : '"bad" in {tweet} and "ethereum" in {tweet}',
-        'order' : { 
-                    'side' : 'sell',
-                    'type' : 'market',
-                    'product_id' : 'ETH-USD',
-                    'size' : '{available[ETH]}*0.0001'
-                }
+        'orders' : [
+                        { 
+                            'side' : 'sell',
+                            'type' : 'market',
+                            'product_id' : 'ETH-USD',
+                            'size' : '{available[ETH]}*0.0001'
+                        }
+                    ]
     }
 ]

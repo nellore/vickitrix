@@ -168,41 +168,42 @@ class TradeListener(tweepy.StreamListener):
                              status.author.screen_name, ': ', status.text]
                         )
                     )
-                self.available = get_dough(self.gdax_client,
-                                                status_update=True)
-                not_enough = False
-                for money in ['size', 'funds', 'price']:
-                    try:
-                        # If the hundredths rounds down to zero, ain't enough
-                        rule['order'][money] = str(eval(
-                                rule['order'][money].format(
-                                        tweet='status.text',
-                                        available=self.available
-                                    )
+                for order in rule['orders']:
+                    self.available = get_dough(self.gdax_client,
+                                                    status_update=True)
+                    not_enough = False
+                    for money in ['size', 'funds', 'price']:
+                        try:
+                            # If the hundredths rounds down to zero, ain't enough
+                            order[money] = str(eval(
+                                    order[money].format(
+                                            tweet='status.text',
+                                            available=self.available
+                                        )
+                                ))
+                            not_enough = (
+                                    int(float(order[money]) * 100) == 0
+                                )
+                        except KeyError:
+                            pass
+                    print_to_screen(''.join(
+                                [timestamp(), 'PLACING ORDER'] +
+                                [prettify_dict(order)]
                             ))
-                        not_enough = (
-                                int(float(rule['order'][money]) * 100) == 0
+                    if not_enough:
+                        print_to_screen(
+                                timestamp() +
+                                'One of {"price", "funds", "size"} is zero! ' +
+                                'Order not placed.'
                             )
-                    except KeyError:
-                        pass
-                print_to_screen(''.join(
-                            [timestamp(), 'PLACING ORDER'] +
-                            [prettify_dict(rule['order'])]
-                        ))
-                if not_enough:
-                    print_to_screen(
-                            timestamp() +
-                            'One of {"price", "funds", "size"} is zero! ' +
-                            'Order not placed.'
-                        )
-                    return
-                if rule['order']['side'] == 'buy':
-                    self.gdax_client.buy(**rule['order'])
-                else:
-                    assert rule['order']['side'] == 'sell'
-                    self.gdax_client.sell(**rule['order'])
-                print_to_screen(timestamp() + 'Order placed.')
-                time.sleep(self.sleep_time)
+                        return
+                    if order['side'] == 'buy':
+                        self.gdax_client.buy(**order)
+                    else:
+                        assert order['side'] == 'sell'
+                        self.gdax_client.sell(**order)
+                    print_to_screen(timestamp() + 'Order placed.')
+                    time.sleep(self.sleep_time)
                 get_dough(self.gdax_client, status_update=True)
 
     def on_error(self, status_code):
@@ -254,7 +255,7 @@ def go():
         )
     trade_parser.add_argument('--sleep', '-s', type=float, required=False,
             default=0.5,
-            help='how long to wait (in s) after a trade'
+            help='how long to wait (in s) after an order has been placed'
         )
     args = parser.parse_args()
     key_dir = os.path.join(os.path.expanduser('~'), '.vickitrix')
@@ -408,104 +409,109 @@ def go():
                 new_rules[i]['keywords'] = []
             '''Validate order; follow https://docs.gdax.com/#orders for 
             filling in default values.'''
-            if 'order' not in rule or not isinstance(rule['order'], dict):
+            if 'orders' not in rule or not isinstance(rule['orders'], list):
                 raise RuntimeError(''.join([
-                        ('Every rule must have an "order" dictionary, but '
+                        ('Every rule must have an "orders" list, but '
                          'this rule from the file "{}" doesn\'t:').format(
                         args.rules), os.linesep, prettify_dict(rule)
                     ])
                 )
-            unrecognized_keys = [
-                    key for key in rule['order'] if key not in order_vocab
-                ]
-            if unrecognized_keys:
-                raise RuntimeError(''.join([
+            for j, order in enumerate(rule['orders']):
+                if not isinstance(order, dict):
+                    raise RuntimeError(''.join([
+                        ('Every order must be a dictionary, but order #{} '
+                         'from this rule in the file "{}" isn\'t:').format(
+                        j+1, args.rules), os.linesep, prettify_dict(rule)]))
+                unrecognized_keys = [
+                        key for key in order if key not in order_vocab
+                    ]
+                if unrecognized_keys:
+                    raise RuntimeError(''.join([
                         'In the file "{}", the "order" key(s) '.format(
                             args.rules),
                         os.linesep, '[',
                         ', '.join(unrecognized_keys), ']', os.linesep,
-                        'are not valid yet are present in the following rule:',
+                        ('are not valid yet are present in order #{} of '
+                         'the following rule:').format(j+1),
                         os.linesep, prettify_dict(rule)
                     ]))
-            try:
-                if rule['order']['type'] not in ['limit', 'market', 'stop']:
-                    raise RuntimeError(''.join([
-                        ('An order\'s "type" must be one of {{"limit", '
-                         '"market", "stop"}}, which the order in this rule '
-                         'from the file "{}" doesn\'t satisfy:').format(
-                         args.rules), os.linesep, prettify_dict(rule)
-                    ])
-                )
-            except KeyError:
-                # GDAX default is limit
-                new_rules[i]['order']['type'] = 'limit'
-            if 'side' not in rule['order']:
-                raise RuntimeError(''.join([
-                        ('An order must have a "side", but the order in '
-                         'this rule from the file "{}" doesn\'t:').format(
-                         args.rules), os.linesep, prettify_dict(rule)
-                    ])
-                )
-            if rule['order']['side'] not in ['buy', 'sell']:
-                    raise RuntimeError(''.join([
-                        ('An order\'s "side" must be one of {{"buy", '
-                         '"sell"}}, which the order in this rule '
-                         'from the file "{}" doesn\'t satisfy:').format(
-                         args.rules), os.linesep, prettify_dict(rule)
-                    ])
-                )
-            if 'product_id' not in rule['order']:
-                raise RuntimeError(''.join([
-                        ('An order must have a "product_id", but in the file '
-                         '"{}", this rule\'s order doesn\'t:').format(
-                         args.rules), os.linesep, prettify_dict(rule)
-                    ])
-                )
-            if new_rules[i]['order']['type'] == 'limit':
-                for item in ['price', 'size']:
-                    if item not in rule['order']:
+                try:
+                    if order['type'] not in [
+                            'limit', 'market', 'stop'
+                        ]:
                         raise RuntimeError(''.join([
-                            ('If an order\'s "type" is "limit", the order '
-                             'must specify a "{}", but in the file "{}", this '
-                             'rule\'s order doesn\'t:').format(
-                             item, args.rules),
-                             os.linesep, prettify_dict(rule)
-                        ]))
-            elif new_rules[i]['order']['type'] in ['market', 'stop']:
-                if ('size' not in rule['order']
-                     and 'funds' not in rule['order']):
-                    raise RuntimeError(''.join([
-                            ('If an order\'s "type" is "{}", the order '
-                             'must have at least one of {{"size", '
-                             '"funds"}}, but in file "{}", this rule\'s '
-                             'order doesn\'t:').format(
-                                    new_rules[i]['order']['type'], args.rules
-                                ),
+                            ('An order\'s "type" must be one of {{"limit", '
+                             '"market", "stop"}}, which order #{} in this '
+                             'rule from the file "{}" doesn\'t '
+                             'satisfy:').format(j+1, args.rules),
                             os.linesep, prettify_dict(rule)
+                        ]))
+                except KeyError:
+                    # GDAX default is limit
+                    new_rules[i]['orders'][j]['type'] = 'limit'
+                if 'side' not in order:
+                    raise RuntimeError(''.join([
+                            ('An order must have a "side", but order #{} in '
+                             'this rule from the file "{}" doesn\'t:').format(
+                             j+1, args.rules), os.linesep, prettify_dict(rule)
                         ])
                     )
-                for stack in ['size', 'funds']:
-                    try:
-                        eval(rule['order'][stack].format(
-                            tweet=('"The rain in Spain stays mainly '
-                                   'in the plain."'),
-                            available={
-                                'ETH' : .01,
-                                'USD' : .01,
-                                'LTC' : .01,
-                                'BTC' : .01
-                            }))
-                    except KeyError:
-                        pass
-                    except Exception as e:
+                if order['side'] not in ['buy', 'sell']:
                         raise RuntimeError(''.join([
-                                ('"{}" from the following rule in the file '
-                                 '"{}" could not be '
-                                 'evaluated; check the format '
-                                 'and try again: ').format(stack, args.rules),
-                                os.linesep, prettify_dict(rule)
-                            ])
-                        )
+                            ('An order\'s "side" must be one of {{"buy", '
+                             '"sell"}}, which order #{} in this rule '
+                             'from the file "{}" doesn\'t satisfy:').format(
+                             j+1, args.rules), os.linesep, prettify_dict(rule)
+                        ])
+                    )
+                if 'product_id' not in order:
+                    raise RuntimeError(''.join([
+                            ('An order must have a "product_id", but in the '
+                             'file "{}", order #{} from this rule '
+                             'doesn\'t:').format(args.rules, j+1),
+                            os.linesep, prettify_dict(rule)
+                        ]))
+                if new_rules[i]['orders'][j]['type'] == 'limit':
+                    for item in ['price', 'size']:
+                        if item not in order:
+                            raise RuntimeError(''.join([
+                                ('If an order\'s "type" is "limit", the order '
+                                 'must specify a "{}", but in the file "{}",'
+                                 'order #{} from this rule doesn\'t:').format(
+                                 item, args.rules, j+1),
+                                 os.linesep, prettify_dict(rule)
+                            ]))
+                elif new_rules[i]['orders'][j]['type'] in ['market', 'stop']:
+                    if 'size' not in order and 'funds' not in order:
+                        raise RuntimeError(''.join([
+                                ('If an order\'s "type" is "{}", the order '
+                                 'must have at least one of {{"size", '
+                                 '"funds"}}, but in file "{}", order #{} '
+                                 'of this rule doesn\'t:').format(
+                                        new_rules[i]['orders'][j]['type'],
+                                        args.rules, j+1
+                                    ), os.linesep, prettify_dict(rule)]))
+                    for stack in ['size', 'funds']:
+                        try:
+                            eval(order[stack].format(
+                                tweet=('"The rain in Spain stays mainly '
+                                       'in the plain."'),
+                                available={
+                                    'ETH' : .01,
+                                    'USD' : .01,
+                                    'LTC' : .01,
+                                    'BTC' : .01
+                                }))
+                        except KeyError:
+                            pass
+                        except Exception as e:
+                            raise RuntimeError(''.join([
+                                    ('"{}" from order #{} in the following '
+                                     'rule from the file "{}" could not be '
+                                     'evaluated; check the format '
+                                     'and try again:').format(
+                                            stack, j+1, args.rules
+                                        ), os.linesep, prettify_dict(rule)]))
         rules = new_rules
         # Use _last_ entry in config file with profile name
         key = None
