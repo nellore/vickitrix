@@ -5,7 +5,7 @@ vickitrix
 Checks tweets using http://www.tweepy.org/ and
 uses rules specified in file to make market trades on GDAX using
 https://github.com/danpaquin/GDAX-Python. Default rules are stored in 
-vickirules.py and follow the tweets of @vickicryptobot.
+rules/vicki.py and follow the tweets of @vickicryptobot.
 """
 
 _help_intro = """vickitrix allows users to base GDAX trades on tweets."""
