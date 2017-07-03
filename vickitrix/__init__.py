@@ -267,7 +267,7 @@ def go():
         # Grab and write all necessary credentials
         config_file = os.path.join(key_dir, 'config')
         print('Enter a name for a new profile (default): ', end='')
-        profile_name = raw_input()
+        profile_name = input()
         if not profile_name: profile_name = 'default'
         salt = Random.new().read(AES.block_size)
         key = KDF.PBKDF2(getpass.getpass((
@@ -314,7 +314,7 @@ def go():
                     '''Write it in plaintext if it's a public key; then the 
                     user can open the config file and know which keys are in 
                     use.'''
-                    print(''.join([token, ': ', raw_input()]),
+                    print(''.join([token, ': ', input()]),
                             file=config_stream)
                 else:
                     # A warning to developers in a variable name
