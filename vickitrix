@@ -116,35 +116,56 @@ class TradeListener(tweepy.StreamListener):
         self.gdax_client = gdax_client
 
     def on_status(self, status):
-        # NO RETWEETS
-        if status.text.startswith('RT'): return
-        print_to_screen(timestamp() + status.text)
         for rule in self.rules:
             if status.author.screen_name == rule['handle'] and eval(
-                        rule['condition'].format(tweet='"' + status.text + '"')
+                        rule['condition'].format(
+                            tweet='"' + status.text.replace('"', '\\"') + '"'
+                        )
                     ):
+                if ((hasattr(status, 'retweeted_status')
+                     and status.retweeted_status)
+                    or status.in_reply_to_status_id
+                    or status.in_reply_to_status_id_str
+                    or status.in_reply_to_user_id
+                    or status.in_reply_to_user_id_str
+                    or status.in_reply_to_screen_name):
+                    # This is an RT or reply; don't do anything
+                    return
                 # Condition satisfied! Perform action
+                print_to_screen('****')
+                print_to_screen(timestamp() + 'TWEET MATCHED')
+                print_to_screen(''.join(
+                        ['@', status.author.screen_name, ': ', status.text])
+                    )
+                print_to_screen('****')
                 accounts = get_dough(gdax_client, status_update=True)
                 base_currency, quote_currency = rule['product'].split('-')
                 keywords = { 'type' : 'market',
                              'product_id' : rule['product'] }
+                not_enough = False
+                assert 'size' in rule or 'funds' in rule
                 if 'size' in rule:
                     keywords['size'] = str(eval(
                             rule['size'].format(
                                     available=accounts[base_currency]
                                 )
                         ))
+                    not_enough = (int(float(keywords['size']) * 100) == 0)
                 if 'funds' in rule:
                     keywords['funds'] = str(eval(
                             rule['funds'].format(
                                     available=accounts[quote_currency]
                                 )
                         ))
+                    not_enough = (int(float(keywords['funds']) * 100) == 0)
                 print_to_screen('****')
                 print_to_screen(timestamp() + 'TRADING')
                 for keyword in keywords:
-                    print_to_screen(' : '.join([keyword, keywords[keyword]]))
+                    print_to_screen(': '.join([keyword, keywords[keyword]]))
                 print_to_screen('****')
+                if not_enough:
+                    print_to_screen('Nothing to trade! Continuing...')
+                    return
                 if rule['action'] == 'buy':
                     self.gdax_client.buy(**keywords)
                 elif rule['action'] == 'sell':
@@ -357,25 +378,27 @@ if __name__ == '__main__':
         from vickirules import rules
         # Get all handles to monitor
         handles = set([rule['handle'] for rule in rules])
-        users = []
+        handles_to_user_ids = {}
         for handle in handles:
             try:
-                users.append(twitter_client.get_user(handle))
+                handles_to_user_ids[handle] = twitter_client.get_user(
+                                                                handle
+                                                            ).id_str
             except tweepy.error.TweepError as e:
                 if 'User not found' in e:
                     'Handle {} not found; skipping...'.format(handle)
-        if not users:
+        if not handles_to_user_ids:
             raise RuntimeError('No followable Twitter handles found in rules!')
         trade_listener = TradeListener(rules, gdax_client)
         stream = tweepy.Stream(
                     auth=twitter_client.auth, listener=trade_listener
                 )
-        print_to_screen('Listening for tweets...')
         while True:
-            stream.filter(follow=[user.id_str for user in users])
+            print_to_screen('Listening for tweets...')
+            stream.filter(follow=handles_to_user_ids.values())
             print_to_screen(
                     timestamp()
-                    + 'Got rate-limited. Restarting in {} s...'.format(
+                    + 'Rate limit error. Restarting in {} s...'.format(
                                                                 args.interval
                                                             )
                 )
