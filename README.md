@@ -6,7 +6,9 @@ Here's how to get `vickitrix` to work on your machine.
 
 ## Preliminaries
 
-Though `vickitrix` should work on Python 2 or 3 in Windows/UNIX/it's been tested mostly on Python 2.7 on a Macbook from late 2016 running Mac OS X Sierra. You'll need some keys and secrets and passcodes from Twitter and GDAX. `vickitrix` will store these in a config file (`~/.vickitrix/config`) on disk, but it ensures the secrets and passcodes are AES256-encrypted so evildoers who grab your laptop while you're logged in can't easily swipe working credentials.
+Though `vickitrix` should work on Python 2 or 3 in Windows/UNIX, it's been tested mostly on Python 2.7 on a Macbook from late 2016 running OS X Sierra.
+
+You'll need some keys and secrets and passcodes from Twitter and GDAX. `vickitrix` will store these in a config file (`~/.vickitrix/config`) on disk, but it ensures the secrets and passcodes are AES256-encrypted so evildoers who grab your laptop while you're logged in can't easily swipe working credentials.
 
 1. Open a new browser tab, and use it to [create a new Twitter app](https://apps.twitter.com/) after logging into Twitter. Name and describe it however you like, and specify no callback URL, but note Twitter also requires you enter some well-formed website URL to finish the process. You're allowed to write something like `https://placeholder.com/placeholder`. The thing will complain if your description isn't long enough, too. So dumb.
 2. Click the `Keys and Access Tokens` tab.
