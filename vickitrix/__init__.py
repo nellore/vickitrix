@@ -163,7 +163,7 @@ class TradeListener(tweepy.StreamListener):
                              status.author.screen_name, ': ', status.text]
                         )
                     )
-                accounts = get_dough(gdax_client, status_update=True)
+                accounts = get_dough(self.gdax_client, status_update=True)
                 base_currency, quote_currency = rule['product'].split('-')
                 keywords = { 'type' : 'market',
                              'product_id' : rule['product'] }
@@ -206,7 +206,7 @@ class TradeListener(tweepy.StreamListener):
                         )
                 print_to_screen(timestamp() + 'Trade complete.')
                 time.sleep(self.sleep_time)
-                get_dough(gdax_client, status_update=True)
+                get_dough(self.gdax_client, status_update=True)
 
     def on_error(self, status_code):
         if status_code == 420:
