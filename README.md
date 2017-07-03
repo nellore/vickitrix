@@ -26,9 +26,9 @@ You'll need some keys and secrets and passcodes from Twitter and GDAX. `vickitri
     * `keywords`: a list of keywords from tweets to which the rule should apply, where commas are interpreted as logical ORs. If both `handles` and `keyword` are specified, there's a logical OR between the two lists as well.
     * `action`: either `buy` or `sell`
     * `product`: a valid [GDAX product ID](https://docs.gdax.com/#products). It looks like `<base currency>-<quote currency>`.
-    * `funds`: see [Market Order Parameters](https://docs.gdax.com/#place-a-new-order) for a definition. The value may be any Python-parseable math expression involving `{available}`, which `vickitrix` takes to be the amount of the _quote_ currency available for trading in your account. At least one of `funds` or `size` must be specified in a rule.
-    * `size`: see [Market Order Parameters](https://docs.gdax.com/#place-a-new-order) for a definition. The value may be any Python-parseable math expression involving `{available}`, which `vickitrix` takes to be the amount of the _base_ currency available for trading in your account.
-    * `condition`: any Python-parseable expression; use `{tweet}` to refer to the content of a tweet.
+    * `funds`: see [Market Order Parameters](https://docs.gdax.com/#place-a-new-order) for a definition. The value may be any Python-parsable math expression involving `{available}`, which `vickitrix` takes to be the amount of the _quote_ currency available for trading in your account. At least one of `funds` or `size` must be specified in a rule.
+    * `size`: see [Market Order Parameters](https://docs.gdax.com/#place-a-new-order) for a definition. The value may be any Python-parsable math expression involving `{available}`, which `vickitrix` takes to be the amount of the _base_ currency available for trading in your account.
+    * `condition`: any Python-parsable expression; use `{tweet}` to refer to the content of a tweet.
 With the default rules, you buy all the ETH you can when @vickicryptobot goes long, and you sell all the ETH you can when @vickicryptobot goes short.
 4. Run
         
