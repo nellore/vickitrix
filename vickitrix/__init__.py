@@ -192,6 +192,8 @@ class TradeListener(tweepy.StreamListener):
                                             inside_ask=inside_ask
                                         )
                                 ))
+                            print(order[money])
+                            print(not_enough)
                             not_enough = (
                                     int(float(order[money]) * 100) == 0
                                 )
@@ -596,6 +598,7 @@ def go():
                       'b) You entered the wrong password above.']
                 ))
             exit(1)
+        print_to_screen('Twitter/GDAX credentials verified.')
         # Get all handles to monitor
         handles, keywords = set(), set()
         for rule in rules:

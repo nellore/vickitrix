@@ -1,10 +1,10 @@
 from setuptools import setup
 
 setup(name='vickitrix',
-      version='0.1.1',
+      version='0.1.2',
       description='trade crypto on GDAX based on tweets',
       url='http://github.com/nellore/vickitrix',
-      download_url = 'https://github.com/nellore/vickitrix/tarball/0.1.1',
+      download_url = 'https://github.com/nellore/vickitrix/tarball/0.1.2',
       author='Abhi Nellore',
       author_email='anellore@gmail.com',
       license='MIT',
