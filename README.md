@@ -4,7 +4,7 @@
 
 (*NOTE:* `vickitrix` versions < 0.1.2 didn't work with the default rules because of case sensitivity issues. If you've already followed the instructions below, you can upgrade to the latest version of `vickitrix` with
 
-```pip install vickitrix --upgrade```)
+`pip install vickitrix --upgrade`.)
 
 Here's how to get `vickitrix` to work on your machine.
 
