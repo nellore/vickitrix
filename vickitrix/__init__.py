@@ -147,7 +147,7 @@ class TradeListener(tweepy.StreamListener):
             if ((not rule['handles'])
                  or status.author.screen_name.lower() in rule['handles']) and (
                  (not rule['keywords'])
-                 or any([keyword.lower() in status.text
+                 or any([keyword in status.text.lower()
                             for keyword in rule['keywords']])) and eval(
                         rule['condition'].format(
                             tweet='status.text',
