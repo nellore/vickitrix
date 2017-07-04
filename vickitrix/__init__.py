@@ -192,8 +192,6 @@ class TradeListener(tweepy.StreamListener):
                                             inside_ask=inside_ask
                                         )
                                 ))
-                            print(order[money])
-                            print(not_enough)
                             not_enough = (
                                     int(float(order[money]) * 100) == 0
                                 )
