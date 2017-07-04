@@ -6,7 +6,7 @@ Here's how to get `vickitrix` to work on your machine.
 
 ## Preliminaries
 
-Though `vickitrix` should work on Python 2 or 3 in Windows/UNIX, it's been tested mostly on Python 2.7 on a Macbook from late 2016 running OS X Sierra.
+Though `vickitrix` should work on Python 2 or 3 in Windows/UNIX, it's been tested mostly on Python 2.7 on a Macbook from late 2016 running OS X Sierra. (Check out [this issue](https://github.com/nellore/vickitrix/issues/1) if you run into `pycrypto` compilation problems installing `vickitrix` in Windows.)
 
 You'll need some keys and secrets and passcodes from Twitter and GDAX. `vickitrix` will store these in a config file (`~/.vickitrix/config`) on disk, but it ensures the secrets and passcodes are AES256-encrypted so evildoers who grab your laptop while you're logged in can't easily swipe working credentials.
 
