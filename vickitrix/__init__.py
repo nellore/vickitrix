@@ -74,7 +74,7 @@ def print_to_screen(message, newline=True, carriage_return=False):
         No return value.
     """
     full_message = ('\x1b[K' + message + ('\r' if carriage_return else '')
-                        + ('\n' if newline else ''))
+                        + (os.linesep if newline else ''))
     try:
         sys.stderr.write(full_message)
         if sys.stderr.isatty():
@@ -111,7 +111,7 @@ def prettify_dict(rule):
 
         Return value: rule string
     """
-    return json.dumps(rule, sort_keys=True,
+    return json.dumps(rule, sort_keys=False,
                         indent=4, separators=(',', ': '))
 
 def get_dough(gdax_client, status_update=False):
@@ -140,6 +140,7 @@ class TradeListener(tweepy.StreamListener):
         self.gdax_client = gdax_client
         self.sleep_time = sleep_time
         self.available = get_dough(self.gdax_client, status_update=False)
+        self.public_client = gdax.PublicClient() # for product order book
 
     def on_status(self, status):
         for rule in self.rules:
@@ -171,14 +172,24 @@ class TradeListener(tweepy.StreamListener):
                 for order in rule['orders']:
                     self.available = get_dough(self.gdax_client,
                                                     status_update=True)
+                    order_book = self.public_client.get_product_order_book(
+                            order['product_id']
+                        )
+                    inside_bid, inside_ask = (
+                            order_book['bids'][0][0],
+                            order_book['asks'][0][0]
+                        )
                     not_enough = False
                     for money in ['size', 'funds', 'price']:
                         try:
-                            # If the hundredths rounds down to zero, ain't enough
+                            '''If the hundredths rounds down to zero,
+                            ain't enough'''
                             order[money] = str(eval(
                                     order[money].format(
                                             tweet='status.text',
-                                            available=self.available
+                                            available=self.available,
+                                            inside_bid=inside_bid,
+                                            inside_ask=inside_ask
                                         )
                                 ))
                             not_enough = (
@@ -187,7 +198,7 @@ class TradeListener(tweepy.StreamListener):
                         except KeyError:
                             pass
                     print_to_screen(''.join(
-                                [timestamp(), 'PLACING ORDER'] +
+                                [timestamp(), 'PLACING ORDER', os.linesep] +
                                 [prettify_dict(order)]
                             ))
                     if not_enough:
@@ -431,7 +442,7 @@ def go():
                             args.rules),
                         os.linesep, '[',
                         ', '.join(unrecognized_keys), ']', os.linesep,
-                        ('are not valid yet are present in order #{} of '
+                        ('are invalid yet present in order #{} of '
                          'the following rule:').format(j+1),
                         os.linesep, prettify_dict(rule)
                     ]))
@@ -491,27 +502,27 @@ def go():
                                         new_rules[i]['orders'][j]['type'],
                                         args.rules, j+1
                                     ), os.linesep, prettify_dict(rule)]))
-                    for stack in ['size', 'funds']:
-                        try:
-                            eval(order[stack].format(
-                                tweet=('"The rain in Spain stays mainly '
-                                       'in the plain."'),
-                                available={
-                                    'ETH' : .01,
-                                    'USD' : .01,
-                                    'LTC' : .01,
-                                    'BTC' : .01
-                                }))
-                        except KeyError:
-                            pass
-                        except Exception as e:
-                            raise RuntimeError(''.join([
-                                    ('"{}" from order #{} in the following '
-                                     'rule from the file "{}" could not be '
-                                     'evaluated; check the format '
-                                     'and try again:').format(
-                                            stack, j+1, args.rules
-                                        ), os.linesep, prettify_dict(rule)]))
+                for stack in ['size', 'funds', 'price']:
+                    try:
+                        eval(order[stack].format(
+                            tweet=('"The rain in Spain stays mainly '
+                                   'in the plain."'),
+                            available={
+                                'ETH' : .01,
+                                'USD' : .01,
+                                'LTC' : .01,
+                                'BTC' : .01
+                            }, inside_bid=200, inside_ask=200))
+                    except KeyError:
+                        pass
+                    except Exception as e:
+                        raise RuntimeError(''.join([
+                                ('"{}" from order #{} in the following '
+                                 'rule from the file "{}" could not be '
+                                 'evaluated; check the format '
+                                 'and try again:').format(
+                                        stack, j+1, args.rules
+                                    ), os.linesep, prettify_dict(rule)]))
         rules = new_rules
         # Use _last_ entry in config file with profile name
         key = None
