@@ -1,6 +1,10 @@
-# vickitrix v0.1.1
+# vickitrix v0.1.2
 
 `vickitrix` makes crypto trades on GDAX according to rules about new tweets. Its development and name were inspired by [@vickicryptobot](https://twitter.com/vickicryptobot); in fact, the default rules [`vickitrix/rules/vicki.py`](vickitrix/rules/vicki.py) sell ETH when @vickicryptobot goes short on ETH-USD and buy ETH when @vickicryptobot goes long on ETH-USD. However, `vickitrix` can accommodate arbitrary rules about the content of status updates on Twitter. For example, the rules in [`vickitrix/rules/sentiment.py`](vickitrix/rules/sentiment.py) buy (sell) a miniscule amount of ETH when the words "good" ("bad") and "ethereum" are found in a tweet. Now imagine the possibilities---what rules do you think would be effective? Experiment, create issues, and make pull requests!
+
+(*NOTE:* vickitrix < v0.1.2 didn't work with the default rules because evidently, the Twitter Streaming API is sensitive ti case in handles. (I'd written `vickicryptobot` when I should have written `Vickicryptobot` in [`vickitrix/rules/vicki.py`](vickitrix/rules/vicki.py).) So make sure you get the capitalization of any handles you specify in your rules right! And after following the instructions below, you can always upgrade to the latest version of `vickitrix` with
+
+```pip install vickitrix --upgrade```)
 
 Here's how to get `vickitrix` to work on your machine.
 
@@ -26,7 +30,7 @@ You'll need some keys and secrets and passcodes from Twitter and GDAX. `vickitri
         vickitrix configure
     This allows you to create (or overwrite) a profile with a name of your choice. (Entering nothing makes the profile name `default`, which is nice because then you won't have to specify the profile name at the command line when you `vickitrix trade`.) You'll be asked to enter credentials from the browser tabs you left open in Preliminaries. You'll also be asked to enter a password, which you'll need every time you `vickitrix trade`.
 3. Grab and edit the rules in [`vickitrix/rules/vicki.py`](vickitrix/rules/vicki.py) so they do what you want. `vickitrix/rules/vicki.py` creates a Python list of dictionaries called `rules`, where each dictionary has the following keys:
-    * `handles`: a list of the Twitter handles to which the rule should apply, where commas are interpreted as logical ORs. At least one of `handles` or `keywords` must be specified in a rule. However, nothing is stopping you from passing an empty list, which `vickitrix` interprets as no filter---but do this at your own peril.
+    * `handles`: a list of the Twitter handles to which the rule should apply, where commas are interpreted as logical ORs. Case-sensitive. At least one of `handles` or `keywords` must be specified in a rule. However, nothing is stopping you from passing an empty list, which `vickitrix` interprets as no filter---but do this at your own peril.
     * `keywords`: a list of keywords from tweets to which the rule should apply, where commas are interpreted as logical ORs. If both `handles` and `keyword` are specified, there's a logical OR between the two lists as well.
     * `orders`: a list of orders. Each item is a dictionary of HTTP request parameters for an order as described in the [GDAX docs](https://docs.gdax.com/#orders). `vickitrix` respects default values of parameters given there if any are left out in a given rule. Some details on particular keys from the `order` dictionary:
         * `product_id`: a valid [GDAX product ID](https://docs.gdax.com/#products). It looks like `<base currency>-<quote currency>`.
