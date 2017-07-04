@@ -30,7 +30,7 @@ You'll need some keys and secrets and passcodes from Twitter and GDAX. `vickitri
     * `keywords`: a list of keywords from tweets to which the rule should apply, where commas are interpreted as logical ORs. If both `handles` and `keyword` are specified, there's a logical OR between the two lists as well.
     * `orders`: a list of orders. Each item is a dictionary of HTTP request parameters for an order as described in the [GDAX docs](https://docs.gdax.com/#orders). `vickitrix` respects default values of parameters given there if any are left out in a given rule. Some details on particular keys from the `order` dictionary:
         * `product_id`: a valid [GDAX product ID](https://docs.gdax.com/#products). It looks like `<base currency>-<quote currency>`.
-        * `funds`, `size`, `price`: the value may be any Python-parsable math expression involving any of the following: (1) `{tweet}`: the content of the current matched tweet; (2) `{available[<currency>]}`: here, `<currency>` is one of `ETH`, `BTC`, `LTC`, and `USD`. `vickitrix` sets `{available[<currency>]}` to the amount of `<currency>` available for trading in your account right before making an order. You can use regular expressions here with Python's [`re`](https://docs.python.org/2/library/re.html) module; (3) `{inside_bid}`: the most recent inside (i.e., best) bid from the [product order book](https://docs.gdax.com/#get-product-order-book) for the order's `product_id` at the time the order is placed; (4) `{inside_ask}`: the most recent inside (k.e., best) ask from the product order book for the order's `product_id` at the time the order is placed.
+        * `funds`, `size`, `price`: the value may be any Python-parsable math expression involving any of the following: (1) `{tweet}`: the content of the current matched tweet; (2) `{available[<currency>]}`: here, `<currency>` is one of `ETH`, `BTC`, `LTC`, and `USD`. `vickitrix` sets `{available[<currency>]}` to the amount of `<currency>` available for trading in your account right before making an order. You can use regular expressions here with Python's [`re`](https://docs.python.org/2/library/re.html) module; (3) `{inside_bid}`: the most recent inside (i.e., best) bid from the [product order book](https://docs.gdax.com/#get-product-order-book) for the order's `product_id` at the time the order is placed; (4) `{inside_ask}`: the most recent inside (i.e., best) ask from the product order book for the order's `product_id` at the time the order is placed.
     * `condition`: any Python-parsable expression involving `{tweet}` and `{available[<currency>]`. Regular expressions can be used here with the `re` module.
 With the default rules, you buy all the ETH you can when @vickicryptobot goes long, and you sell all the ETH you can when @vickicryptobot goes short.
 4. Run
@@ -48,5 +48,12 @@ Pull requests are welcome! Fork at will! If you've written a substantial contrib
 
 If you use this software, you're making and/or losing money because someone or something you probably don't know tweeted, which is totally crazy. Don't take risks with money you can't afford to lose.
 
-This software is supplied "as is" without any warranties or support. I assume no liability or responsibility for use of the software.
+Also note this part of the MIT license:
+```THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.```
 
