@@ -35,7 +35,7 @@ You'll need some keys and secrets and passcodes from Twitter and GDAX. `vickitri
 With the default rules, you buy all the ETH you can when @vickicryptobot goes long, and you sell all the ETH you can when @vickicryptobot goes short.
 4. Run
         
-        vickitrix trade --profile <profile name goes here> --rules <path to rules file>
+        vickitrix trade --profile <profile name> --rules <rules file>
         
    , and enter the profile's password. Leave out the `--profile` to use the default profile, and leave out `--rules` to use the default `vickitrix/rules/vicki.py`. `vickitrix` will listen for tweets that match the conditions from the rules in `vickirules.py` and perform the specified actions.
    If after a trade's been made, the "available to trade" line makes it look like currency vanished into thin air, don't fret; this probably means the trade hasn't completed yet. You can increase the sleep time after a trade is requested and before the "available to trade" line is displayed with `--sleep`.
