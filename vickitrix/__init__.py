@@ -145,9 +145,9 @@ class TradeListener(tweepy.StreamListener):
     def on_status(self, status):
         for rule in self.rules:
             if ((not rule['handles'])
-                 or status.author.screen_name in rule['handles']) and (
+                 or status.author.screen_name.lower() in rule['handles']) and (
                  (not rule['keywords'])
-                 or any([keyword in status.text
+                 or any([keyword.lower() in status.text
                             for keyword in rule['keywords']])) and eval(
                         rule['condition'].format(
                             tweet='status.text',
@@ -418,6 +418,12 @@ def go():
                 new_rules[i]['handles'] = []
             if 'keywords' not in rule:
                 new_rules[i]['keywords'] = []
+            new_rules[i]['handles'] = [
+                    handle.lower() for handle in new_rules[i]['handles']
+                ]
+            new_rules[i]['keywords'] = [
+                    keyword.lower() for keyword in new_rules[i]['keywords']
+                ]
             '''Validate order; follow https://docs.gdax.com/#orders for 
             filling in default values.'''
             if 'orders' not in rule or not isinstance(rule['orders'], list):
