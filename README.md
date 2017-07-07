@@ -1,4 +1,4 @@
-# vickitrix v0.1.4
+# vickitrix v0.1.5
 
 `vickitrix` makes crypto trades on GDAX according to rules about new tweets. Its development and name were inspired by [@vickicryptobot](https://twitter.com/vickicryptobot); in fact, the default rules [`vickitrix/rules/vicki.py`](vickitrix/rules/vicki.py) sell ETH when @vickicryptobot goes short on ETH-USD and buy ETH when @vickicryptobot goes long on ETH-USD. However, `vickitrix` can accommodate arbitrary rules about the content of status updates on Twitter. For example, the rules in [`vickitrix/rules/sentiment.py`](vickitrix/rules/sentiment.py) buy (sell) a miniscule amount of ETH when the words "good" ("bad") and "ethereum" are found in a tweet. Now imagine the possibilities---what rules do you think would be effective? Experiment, create issues, and make pull requests!
 
@@ -22,7 +22,7 @@ You'll need some keys and secrets and passcodes from Twitter and GDAX. `vickitri
 1. Run
 
         pip install vickitrix
-   ...or clone the repo, `cd` into it, `pip install` the required packages [`tweepy`](http://www.tweepy.org/), [`gdax`](https://github.com/danpaquin/GDAX-Python), and [`pycrypto`](https://pypi.python.org/pypi/pycrypto), and precede all `vickitrix` commands below with `python`. Your choice.
+   ...or clone the repo, `cd` into it, `pip install` the required packages [`twython`](https://github.com/ryanmcgrath/twython), [`gdax`](https://github.com/danpaquin/GDAX-Python), and [`pycrypto`](https://pypi.python.org/pypi/pycrypto), and precede all `vickitrix` commands below with `python`. Your choice.
 2. Configure `vickitrix` by running
 
         vickitrix configure
