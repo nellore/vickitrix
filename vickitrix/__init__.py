@@ -29,11 +29,11 @@ except ImportError as e:
     raise
 
 try:
-    import tweepy
+    from twython import TwythonStreamer, Twython, TwythonError
 except ImportError as e:
     e.message = (
-            'vickitrix requires tweepy. Install it with '
-            '"pip install tweepy".'
+            'vickitrix requires Twython. Install it with '
+            '"pip install twython".'
         )
     raise
 
@@ -131,42 +131,50 @@ def get_dough(gdax_client, status_update=False):
                                         [el[::-1] for el in dough.items()]))]))
     return dough
 
-class TradeListener(tweepy.StreamListener):
+class TradeListener(TwythonStreamer):
     """ Trades on GDAX based on tweets. """
 
-    def __init__(self, rules, gdax_client, sleep_time=0.5, api=None):
-        super(TradeListener, self).__init__(api=api)
+    def __init__(self, rules, gdax_client,
+                 app_key, app_secret, oauth_token, oauth_token_secret,
+                 timeout=300, retry_count=None, retry_in=10, client_args=None,
+                 handlers=None, chunk_size=1, sleep_time=0.5):
+        super(TradeListener, self).__init__(
+                app_key, app_secret, oauth_token, oauth_token_secret,
+                timeout=300, retry_count=None, retry_in=10, client_args=None,
+                handlers=None, chunk_size=1
+            )
         self.rules = rules
         self.gdax_client = gdax_client
         self.sleep_time = sleep_time
         self.available = get_dough(self.gdax_client, status_update=False)
         self.public_client = gdax.PublicClient() # for product order book
 
-    def on_status(self, status):
+    def on_success(self, status):
         for rule in self.rules:
             if ((not rule['handles'])
-                 or status.author.screen_name.lower() in rule['handles']) and (
-                 (not rule['keywords'])
-                 or any([keyword in status.text.lower()
+                 or status['user']['screen_name'].lower()
+                 in rule['handles']) and ((not rule['keywords'])
+                 or any([keyword in status['text'].lower()
                             for keyword in rule['keywords']])) and eval(
                         rule['condition'].format(
-                            tweet='status.text',
+                            tweet='status["text"]',
                             available=self.available
                     )):
-                if ((hasattr(status, 'retweeted_status')
-                     and status.retweeted_status)
-                    or status.in_reply_to_status_id
-                    or status.in_reply_to_status_id_str
-                    or status.in_reply_to_user_id
-                    or status.in_reply_to_user_id_str
-                    or status.in_reply_to_screen_name):
+                if (('retweeted_status' in status 
+                     and status['retweeted_status'])
+                     or status['in_reply_to_status_id']
+                     or status['in_reply_to_status_id_str']
+                     or status['in_reply_to_user_id']
+                     or status['in_reply_to_user_id_str']
+                     or status['in_reply_to_screen_name']):
                     # This is an RT or reply; don't do anything
                     return
                 # Condition satisfied! Perform action
                 print_to_screen(
                         ''.join(
                             [timestamp(), 'TWEET MATCHED || @',
-                             status.author.screen_name, ': ', status.text]
+                             status['user']['screen_name'] , ': ',
+                             status['text']]
                         )
                     )
                 for order in rule['orders']:
@@ -217,10 +225,10 @@ class TradeListener(tweepy.StreamListener):
                     time.sleep(self.sleep_time)
                 get_dough(self.gdax_client, status_update=True)
 
-    def on_error(self, status_code):
+    def on_error(self, status_code, status):
         if status_code == 420:
-            #returning False in on_data disconnects the stream
-            return False
+            # Rate limit error; bail and wait to reconnect
+            self.disconnect()
 
 def go():
     """ Entry point """
@@ -586,9 +594,11 @@ def go():
                                 )
             # Are they working?
             get_dough(gdax_client, status_update=True)
-            auth = tweepy.OAuthHandler(*keys_and_secrets[3:5])
-            auth.set_access_token(*keys_and_secrets[5:7])
-            twitter_client = tweepy.API(auth)
+            twitter_client = Twython(*keys_and_secrets[3:7])
+            trade_listener = TradeListener(
+                    *([rules, gdax_client] + keys_and_secrets[3:7]),
+                    sleep_time=args.sleep
+                )
         except Exception as e:
             from traceback import format_exc
             print_to_screen(format_exc())
@@ -611,23 +621,24 @@ def go():
         handles_to_user_ids = {}
         for handle in handles:
             try:
-                handles_to_user_ids[handle] = twitter_client.get_user(
-                                                                handle
-                                                            ).id_str
-            except tweepy.error.TweepError as e:
-                if 'User not found' in e:
-                    'Handle {} not found; skipping...'.format(handle)
+                handles_to_user_ids[handle] = twitter_client.show_user(
+                                                            screen_name=handle
+                                                        )['id_str']
+            except TwythonError as e:
+                if 'User not found' in e.message:
+                    print(
+                        'Handle {} not found; skipping rule...'.format(handle)
+                    )
+                else:
+                    raise
         if not handles_to_user_ids:
             raise RuntimeError('No followable Twitter handles found in rules!')
-        trade_listener = TradeListener(rules, gdax_client)
-        stream = tweepy.Stream(
-                    auth=twitter_client.auth, listener=trade_listener,
-                    sleep_time=args.sleep
-                )
         while True:
             print_to_screen('Listening for tweets; hit CTRL+C to quit...')
-            stream.filter(follow=handles_to_user_ids.values(),
-                            track=list(keywords))
+            trade_listener.statuses.filter(
+                    follow=handles_to_user_ids.values(),
+                    track=list(keywords)
+                )
             print_to_screen(
                     timestamp()
                     + 'Rate limit error. Restarting in {} s...'.format(
