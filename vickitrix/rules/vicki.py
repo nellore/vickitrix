@@ -1,6 +1,6 @@
 rules = [
     {
-        'handles' : ['Vickicryptobot'],
+        'handles' : ['vickiethbot'],
         'condition' : '"ETHUSD" in {tweet} and "long" in {tweet}',
         'orders' : [
             { 
@@ -12,7 +12,7 @@ rules = [
         ]
     },
     {
-        'handles' : ['Vickicryptobot'],
+        'handles' : ['vickiethbot'],
         'condition' : '"ETHUSD" in {tweet} and "short" in {tweet}',
         'orders' : [
             { 
