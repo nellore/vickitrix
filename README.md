@@ -46,7 +46,7 @@ With the default rules, you buy all the ETH you can when @vickiethbot goes long,
 
 ## Contributing
 
-Pull requests are welcome! Fork at will! If you've written a substantial contribution, and you'd like to be added as a collaborator, reach out to me.
+Pull requests are welcome! Fork freely! If you've written a substantial contribution, and you'd like to be added as a collaborator, reach out to me.
 
 ## Disclaimer
 
