@@ -1,6 +1,6 @@
 # vickitrix v0.1.5
 
-Like this software? Tip me: `0x9456C8b7007531101e446401Df2b2D7dcdFA4aA9`
+Like this software? Tip me: `0x9456C8b7007531101e446401Df2b2D7dcdFA4aA9`. If you're stuck on setup and usage, you can ask for help at https://gitter.im/nellore/vickitrix.
 
 `vickitrix` makes crypto trades on GDAX according to rules about new tweets. Its development and name were inspired by [@vickiethbot](https://twitter.com/vickiethbot); in fact, the default rules [`vickitrix/rules/vicki.py`](vickitrix/rules/vicki.py) sell ETH when @vickiethbot goes short on ETH-USD and buy ETH when @vickiethbot goes long on ETH-USD. However, `vickitrix` can accommodate arbitrary rules about the content of status updates on Twitter. For example, the rules in [`vickitrix/rules/sentiment.py`](vickitrix/rules/sentiment.py) buy (sell) a miniscule amount of ETH when the words "good" ("bad") and "ethereum" are found in a tweet. Now imagine the possibilities---what rules do you think would be effective? Experiment, create issues, and make pull requests!
 
