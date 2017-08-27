@@ -152,8 +152,9 @@ class TradeListener(TwythonStreamer):
     def on_success(self, status):
         for rule in self.rules:
             if ((not rule['handles'])
-                 or status['user']['screen_name'].lower()
-                 in rule['handles']) and ((not rule['keywords'])
+                 or ('user' in status
+                     and status['user']['screen_name'].lower()
+                 in rule['handles'])) and ((not rule['keywords'])
                  or any([keyword in status['text'].lower()
                             for keyword in rule['keywords']])) and eval(
                         rule['condition'].format(
