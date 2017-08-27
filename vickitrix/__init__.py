@@ -41,7 +41,7 @@ try:
     from Crypto.Cipher import AES
     from Crypto.Protocol import KDF
     from Crypto import Random
-except ImportError:
+except ImportError as e:
     e.message = (
         'vickitrix requires PyCrypto. Install it with '
         '"pip install pycrypto".'
